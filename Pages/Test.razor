@@ -1,0 +1,29 @@
+﻿@page "/test"
+@using Perguntas.Client.Services
+@using Perguntas.Client.Models
+
+@inject CategoryService CategoryService
+
+
+<h3>Teste</h3>
+
+
+<button @onclick="CreateCategory">
+    Criar Categoria
+</button>
+
+
+@code {
+
+    private async Task CreateCategory()
+    {
+        var category = new Category
+        {
+            Name = "Anatomia"
+        };
+
+
+        await CategoryService.CreateAsync(category);
+    }
+
+}

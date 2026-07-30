@@ -1,0 +1,99 @@
+﻿@page "/questions/{Id:guid}"
+@using Perguntas.Client.Models
+@using Perguntas.Client.Services
+
+@inject QuestionService QuestionService
+@inject CategoryService CategoryService
+
+<h3>Perguntas</h3>
+
+<EditForm Model="_question" OnValidSubmit="CreateQuestion">
+    <InputText @bind-Value="_question.Statement"></InputText>
+    <InputText @bind-Value="_question.Answer"></InputText>
+
+    <button type="submit">
+        Criar Pergunta
+    </button>
+
+</EditForm>
+
+@if (_questions.Count == 0)
+{
+    <p>No questions found.</p>
+}
+else
+{
+    <ul>
+        @foreach (var question in _questions)
+        {
+            <li>
+                <details>
+                    <summary>
+                        @question.Statement
+                    </summary>
+
+                    <p>
+                        @question.Answer
+                    </p>
+
+                    <button @onclick="() => DeleteQuestion(question.ID)">
+                        Delete
+                    </button>
+                </details>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private List<Question> _questions = [];
+    private Question _question = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await GetQuestions();
+
+        StateHasChanged();
+    }
+
+    protected async Task<List<Question>> GetQuestions()
+    {
+        _questions = await QuestionService.GetAllAsync(Id);
+     
+        StateHasChanged();
+
+        return _questions;
+    }
+
+    protected async Task CreateQuestion()
+    {
+        _question.CategoryID = Id;
+        _question.CreatedAt = DateTime.UtcNow;
+
+        await QuestionService.CreateAsync(_question);
+
+        _question = new();
+
+        await GetQuestions();
+    }
+
+    protected async Task DeleteQuestion(Guid id)
+    {
+        await QuestionService.DeleteAsync(id);
+
+        await GetQuestions();
+    }
+
+    protected async Task<Category> GetCategoryById(Guid id)
+    {
+        var category = await CategoryService.GetAsync(id);
+        return category;
+    }
+}

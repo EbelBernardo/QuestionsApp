@@ -1,0 +1,80 @@
+﻿@page "/categories"
+@using Perguntas.Client.Services
+@using Perguntas.Client.Models
+
+@inject CategoryService CategoryService
+@inject NavigationManager Navigation
+
+<h3>Matérias</h3>
+
+<EditForm Model="_category" OnValidSubmit="CreateCategory">
+    <InputText @bind-Value="_category.Name"></InputText>    
+
+    <button type="submit">
+        Criar Categoria
+    </button>
+
+</EditForm>
+
+@if (_categories.Count == 0)
+{
+    <p>No categories found.</p>
+}
+else
+{
+    <ul>
+        @foreach (var category in _categories)
+        {
+            <li>
+                @category.Name
+                <button @onclick="() => Questions(category.ID)">Perguntas</button>
+                <button @onclick="() => DeleteCategory(category.ID)" class="btn text-danger fs-3 opacity-75 mb-1">⊗</button>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+
+    private List<Category> _categories = [];
+    private Category _category = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return; 
+            
+        await GetCategories();
+        
+        StateHasChanged();
+
+    }
+
+    private async Task<List<Category>> GetCategories()
+    {
+        _categories = await CategoryService.GetAllAsync();
+        return _categories;
+    }
+
+    private async Task CreateCategory()
+    {
+        await CategoryService.CreateAsync(_category);
+
+        _category = new();
+
+        await GetCategories();
+    }
+
+    private async Task DeleteCategory(Guid id)
+    {
+        await CategoryService.DeleteAsync(id);
+
+        await GetCategories();
+    }
+
+    private async Task Questions(Guid id)
+    {
+        Navigation.NavigateTo($"/questions/{id}");
+    }
+
+}

@@ -1,0 +1,21 @@
+﻿@page "/"
+
+@using Perguntas.Client.Services
+
+@inject IndexedDbService Database
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+@code {
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Database.InitializeAsync();
+        }
+    }
+
+}
