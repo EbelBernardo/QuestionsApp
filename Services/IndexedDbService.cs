@@ -39,11 +39,10 @@ public class IndexedDbService
             category);
     }
 
-    public async Task UpdateCategoryAsync(int Id, Category category)
+    public async Task UpdateCategoryAsync(Category category)
     {
         await _jsRuntime.InvokeVoidAsync(
             "database.updateCategory",
-            Id,
             category);
     }
 
@@ -75,11 +74,10 @@ public class IndexedDbService
             category);
     }
 
-    public async Task UpdateQuestionAsync(int Id, Question category)
+    public async Task UpdateQuestionAsync(Question category)
     {
         await _jsRuntime.InvokeVoidAsync(
             "database.updateQuestion",
-            Id,
             category);
     }
 

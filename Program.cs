@@ -12,5 +12,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<IndexedDbService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<QuestionService>();
+builder.Services.AddScoped<ThemeService>();
 
 await builder.Build().RunAsync();

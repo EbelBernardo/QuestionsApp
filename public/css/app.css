@@ -75,15 +75,196 @@
         content: var(--blazor-load-percentage-text, "Loading");
     }
 
-code {
-    color: #c02d76;
-}
-
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
-}
-
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+
+/* ============================
+   BODY
+============================ */
+
+body {
+    background: var(--background);
+    color: var(--text);
+}
+
+
+/* ============================
+   Links
+============================ */
+
+a {
+    color: var(--primary);
+}
+
+    a:hover {
+        color: var(--primary-hover);
+    }
+
+
+/* ============================
+   Cards Bootstrap
+============================ */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 10px 25px var(--shadow);
+}
+
+.card-title {
+    color: var(--text);
+}
+
+.card-text {
+    color: var(--text-secondary);
+}
+
+/* ============================
+   Títulos
+============================ */
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text);
+}
+
+
+/* ============================
+   Texto
+============================ */
+
+p,
+label,
+span {
+    color: var(--text-secondary);
+}
+
+
+/* ============================
+   Inputs
+============================ */
+
+.form-control {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+
+    .form-control:focus {
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 .2rem rgba(134,184,154,.25);
+    }
+
+
+    .form-control::placeholder {
+        color: var(--text-secondary);
+    }
+
+/* ============================
+   Botão
+============================ */
+
+.close-button {
+    color: var(--text);
+    font-size: 1.3rem;
+    text-decoration: none;
+}
+
+    .close-button:hover {
+        color: #bdbdbd;
+    }
+
+    .close-button:focus,
+    .close-button:active {
+        color: #bdbdbd;
+        box-shadow: none;
+    }
+
+/* ============================
+   Botão primário
+============================ */
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+    .btn-outline-primary:hover {
+        background: var(--primary);
+        border-color: var(--primary);
+    }
+
+
+/* ============================
+   Botão Danger
+============================ */
+
+.btn-outline-danger {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+    .btn-outline-danger:hover {
+        background: var(--danger);
+    }
+
+
+/* ============================
+   Alert
+============================ */
+
+.alert {
+    border: none;
+    border-radius: var(--radius);
+}
+
+.alert-info {
+    background: #0C4A6E;
+    color: white;
+}
+
+
+/* ============================
+   Popup
+============================ */
+.modal-background {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+
+.modal-box {
+    background: var(--surface);
+    color: var(--text);
+    width: 90%;
+    max-width: 600px;
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+/* ============================
+   Icons
+============================ */
+
+.eye-button {
+    color: white;
+    box-shadow: none;
+}
+
+    .eye-button:hover,
+    .eye-button:focus,
+    .eye-button:active {
+        color: #bfbfbf !important;
+        box-shadow: none !important;
+    }

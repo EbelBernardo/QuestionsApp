@@ -1,37 +1,147 @@
-﻿@page "/categories"
+﻿@page "/"
 @using Perguntas.Client.Services
 @using Perguntas.Client.Models
 
 @inject CategoryService CategoryService
+@inject QuestionService QuestionService
 @inject NavigationManager Navigation
 
-<h3>Matérias</h3>
+<PageTitle>Matérias</PageTitle>
 
-<EditForm Model="_category" OnValidSubmit="CreateCategory">
-    <InputText @bind-Value="_category.Name"></InputText>    
+<div class="container mt-4">
 
-    <button type="submit">
-        Criar Categoria
-    </button>
+    <h3 class="mb-4">Matérias</h3>
 
-</EditForm>
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <EditForm Model="_category" OnValidSubmit="CreateCategory">
 
-@if (_categories.Count == 0)
-{
-    <p>No categories found.</p>
-}
-else
-{
-    <ul>
+                <div class="mb-3">
+                    <InputText class="form-control" @bind-Value="_category.Name"></InputText>
+                </div>
+
+                <button class="btn btn-outline-primary" type="submit">
+                    Criar Matéria
+                </button>
+
+            </EditForm>
+        </div>
+    </div>
+
+
+    @if (_categories.Count == 0)
+    {
+        <div class="alert alert-info">
+            Nenhuma matéria cadastrada.
+        </div>
+    }
+    else
+    {
         @foreach (var category in _categories)
         {
-            <li>
-                @category.Name
-                <button @onclick="() => Questions(category.ID)">Perguntas</button>
-                <button @onclick="() => DeleteCategory(category.ID)" class="btn text-danger fs-3 opacity-75 mb-1">⊗</button>
-            </li>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    
+                    <h5 class="card-title">@category.Name</h5>
+
+                    <p class="card-text"></p>
+
+                    <button class="btn btn-outline-secondary" @onclick="() => OpenCardModal(category.ID, category.Name)">Cards</button>
+                    <button class="btn btn-outline-primary" @onclick="() => Questions(category.ID)">Perguntas</button>
+                    <button class="btn btn-outline-danger" @onclick="() => DeleteCategory(category.ID)">Excluir</button>
+
+                </div>
+            </div>
         }
-    </ul>
+    }
+
+</div>
+
+@if (showCardModal)
+{
+    <div class="modal-background">
+
+        <div class="modal-box">
+
+            @if (showQuestion)
+            {
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <h4 class="mb-0">@_categoryName</h4>
+
+                    <button type="button"
+                            class="btn btn-link p-0 close-button"
+                            @onclick="CloseModal">
+
+                        <i class="bi bi-x-lg"></i>
+
+                    </button>
+
+                </div>
+
+                <label>Pergunta</label>
+
+                <textarea class="form-control mb-3" readonly>@CurrentQuestion?.Statement</textarea>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+
+                    <label class="mb-0">Resposta</label>
+
+                    <button type="button"
+                    class="btn btn-link p-0 eye-button"
+                    @onclick="() => _showAnswer = !_showAnswer">
+
+                        @if (_showAnswer)
+                        {
+                            <i class="bi bi-eye"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-eye-slash"></i>
+                        }
+
+                    </button>
+
+                </div>
+
+                @if (_showAnswer)
+                {
+                    <textarea class="form-control mb-3" readonly>@CurrentQuestion?.Answer</textarea>
+                }
+
+
+                <button class="btn btn-outline-primary me-2"
+                @onclick="Correct">
+                    Acertei
+                </button>
+
+
+                <button class="btn btn-outline-danger"
+                @onclick="Wrong">
+                    Errei
+                </button>
+            }
+
+            @if (showResult)
+            {
+                <div class="mt-3">
+
+                    <h5>Resultado</h5>
+
+                    <p>Você acertou @correctAnswers de @totalQuestions perguntas.</p>
+
+                    <button class="btn btn-outline-danger" 
+                        @onclick="() => CloseModal() ">
+                        Fechar
+                    </button>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
 }
 
 @code {
@@ -39,13 +149,31 @@ else
     private List<Category> _categories = [];
     private Category _category = new();
 
+    private List<Question> _questions = [];
+
+    private string _categoryName = string.Empty;
+
+    private bool showCardModal;
+    private bool showQuestion;
+    private bool showResult;
+    private int currentQuestionIndex = 0;
+    private int totalQuestions => _questions.Count();
+    private int correctAnswers = 0;
+
+    private Question? CurrentQuestion =>
+        _questions.Count > 0 
+        ? _questions[currentQuestionIndex] 
+        : null;
+
+    private bool _showAnswer;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
             return; 
-            
+
         await GetCategories();
-        
+
         StateHasChanged();
 
     }
@@ -77,4 +205,66 @@ else
         Navigation.NavigateTo($"/questions/{id}");
     }
 
+    private async Task<List<Question>> GetAllQuestions(Guid id)
+    {
+        _questions = await QuestionService.GetAllAsync(id);
+        return _questions;
+    }
+
+    private async Task OpenCardModal(Guid id, string name)
+    {
+        _categoryName = name;
+
+        _questions = await GetAllQuestions(id);
+        if (_questions.Count == 0)
+        {
+            // await JSRuntime.InvokeVoidAsync("alert", "Não há perguntas cadastradas para esta matéria.");
+            return;
+        }
+
+        currentQuestionIndex = 0;
+        correctAnswers = 0;
+
+        _showAnswer = false;
+        showQuestion = true;
+        showResult = false;
+        showCardModal = true;
+
+        StateHasChanged();
+    }
+
+    private void Correct()
+    {
+        correctAnswers++;
+        NextQuestion();
+    }
+
+    private void Wrong()
+    {
+        NextQuestion();
+    }
+
+    private void NextQuestion()
+    {
+        _showAnswer = false;
+
+        if (currentQuestionIndex < _questions.Count - 1)
+        {
+            currentQuestionIndex++;
+        }
+        else
+        {
+            showQuestion = false;
+            showResult = true;
+        }
+    }
+
+    private void CloseModal()
+    {
+        showCardModal = false;
+        showQuestion = false;
+        showResult = false;
+        currentQuestionIndex = 0;
+        correctAnswers = 0;
+    }
 }

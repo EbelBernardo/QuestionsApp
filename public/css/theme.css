@@ -1,0 +1,116 @@
+﻿:root {
+    
+    --secondary: #65756C;
+    --secondary-hover: #526158;
+    /* ============================
+       Fundos
+    ============================ */
+
+    --background: #1F2226; /* Cinza escuro neutro */
+    --surface: #292D32; /* Cards */
+    --surface-hover: #343940; /* Hover */
+
+    --sidebar: #24282D; /* Menu lateral */
+    /* ============================
+       Identidade verde pastel
+    ============================ */
+
+    --primary: #9BC7A5; /* Verde sálvia claro */
+    --primary-hover: #B3D8BA; /* Verde mais suave */
+    /* ============================
+       Estados
+    ============================ */
+
+    --danger: #EFA3A3; /* Vermelho rosado */
+    --success: #A8D5B5; /* Verde sucesso */
+    --warning: #E8D49A; /* Amarelo pastel */
+    /* ============================
+       Textos
+    ============================ */
+
+    --text: #F1F3F2; /* Branco suave */
+    --text-secondary: #B8BEBC; /* Cinza claro */
+    /* ============================
+       Bordas e sombras
+    ============================ */
+
+    --border: #41464D;
+    --shadow: rgba(0,0,0,.35);
+    /* ============================
+       Bordas
+    ============================ */
+
+    --radius: 16px;
+    /* ============================
+       Botões
+    ============================ */
+    --secondary: #B8BEBC;
+    --secondary-hover: #D0D5D3;
+}
+
+
+
+.theme-dark {
+    /* ============================
+       Fundos
+    ============================ */
+
+    --background: #F4F6F4; /*Cinza claro levemente esverdeado */
+    --surface: #FFFFFF; /*Cards */
+    --surface-hover: #EEF4EF; /*Hover */
+
+    --sidebar: #E8EFE9; /*Menu lateral */
+    /* ============================
+       Identidade
+    ============================ */
+
+    --primary: #86B89A; /*Verde sálvia pastel */
+    --primary-hover: #6FA985; /*Verde sálvia mais forte */
+    /* ============================
+       Estados
+    ============================ */
+
+    --danger: #E58B8B; /*Vermelho rosado suave*/
+    --success: #82C99B; /*Verde sucesso*/
+    --warning: #E8C878; /*Amarelo pastel*/
+    /* ============================
+       Textos
+    ============================ */
+
+    --text: #26332B; /*Verde/cinza escuro */
+    --text-secondary: #65756C; /* Cinza esverdeado */
+    /* ============================
+       Bordas e sombras
+    ============================ */
+
+    --border: #D9E3DA;
+    --shadow: rgba(38,51,43,.12);
+    /* ============================
+       Bordas
+    ============================ */
+
+    --radius: 16px;
+    /* ============================
+       Botões
+    ============================ */
+}
+
+/* ============================
+   Bootstrap Overrides
+============================ */
+
+.alert-info {
+    --bs-alert-bg: var(--surface) !important;
+    --bs-alert-color: var(--text) !important;
+    --bs-alert-border-color: var(--border) !important;
+    background-color: var(--surface) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+
+    .alert-info::before,
+    .alert-info::after,
+    .alert-info * {
+        color: var(--text) !important;
+    }

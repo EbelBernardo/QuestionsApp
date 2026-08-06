@@ -1,32 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QuestionsApp</title>
     <base href="/" />
-    <link href="_framework/dotnet.f6zs0moae1.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-F7lohjUe/yojj3rATwj0mSSJyCJMfTQc7IHVrtUCEy4=" />
+    <link href="_framework/dotnet.7lekzkxhob.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-26kLdaVO9PY5LwlEHyGKl46m0CqgrBGzcYYpwWMWLas=" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="css/theme.css" rel="stylesheet">
     <link rel="stylesheet" href="css/app.css" />
+    <link href="Questions.styles.css" rel="stylesheet" />
     <!-- If you add any scoped CSS files, uncomment the following to load them
     <link href="QuestionsApp.styles.css" rel="stylesheet" /> -->
     <script type="importmap">{
   "imports": {
     "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.958z1vx7fr.js",
-    "./_framework/dotnet.js": "./_framework/dotnet.f6zs0moae1.js",
-    "./_framework/dotnet.native.js": "./_framework/dotnet.native.ikrs475e5v.js",
-    "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.a6jcqbs390.js"
+    "./_framework/dotnet.js": "./_framework/dotnet.7lekzkxhob.js",
+    "./_framework/dotnet.native.js": "./_framework/dotnet.native.puryxhmhq9.js",
+    "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.web2r9gqbh.js"
   },
   "scopes": {},
   "integrity": {
     "./_framework/blazor.webassembly.958z1vx7fr.js": "sha256-A59Tr9HqEhHMu8kU7kruLI9ayw5MRS6Lvc6z7jCbghk=",
     "./_framework/blazor.webassembly.js": "sha256-A59Tr9HqEhHMu8kU7kruLI9ayw5MRS6Lvc6z7jCbghk=",
-    "./_framework/dotnet.f6zs0moae1.js": "sha256-F7lohjUe/yojj3rATwj0mSSJyCJMfTQc7IHVrtUCEy4=",
-    "./_framework/dotnet.js": "sha256-F7lohjUe/yojj3rATwj0mSSJyCJMfTQc7IHVrtUCEy4=",
-    "./_framework/dotnet.native.ikrs475e5v.js": "sha256-kkp5wX0htwkBcZt5WmEiKmhBqjqdCJtGc+koldfyoDQ=",
-    "./_framework/dotnet.native.js": "sha256-kkp5wX0htwkBcZt5WmEiKmhBqjqdCJtGc+koldfyoDQ=",
-    "./_framework/dotnet.runtime.a6jcqbs390.js": "sha256-7i3usfTrnzC/9qWO4si5Bw4w7D9fUSnSBdhQ47blX2M=",
-    "./_framework/dotnet.runtime.js": "sha256-7i3usfTrnzC/9qWO4si5Bw4w7D9fUSnSBdhQ47blX2M="
+    "./_framework/dotnet.7lekzkxhob.js": "sha256-26kLdaVO9PY5LwlEHyGKl46m0CqgrBGzcYYpwWMWLas=",
+    "./_framework/dotnet.js": "sha256-26kLdaVO9PY5LwlEHyGKl46m0CqgrBGzcYYpwWMWLas=",
+    "./_framework/dotnet.native.js": "sha256-gQbHHzCnWx8iDOC65EKbql7bEltJkfao7lmkAbIRajw=",
+    "./_framework/dotnet.native.puryxhmhq9.js": "sha256-gQbHHzCnWx8iDOC65EKbql7bEltJkfao7lmkAbIRajw=",
+    "./_framework/dotnet.runtime.js": "sha256-SOUHEQ3FhDAibBSR2u90NWZpoBjPuWRmH0BAATUlhJU=",
+    "./_framework/dotnet.runtime.web2r9gqbh.js": "sha256-SOUHEQ3FhDAibBSR2u90NWZpoBjPuWRmH0BAATUlhJU="
   }
 }</script>
 </head>
@@ -46,6 +50,7 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="indexedDb.js"></script>
+    <script src="theme.js"></script>
     <script src="_framework/blazor.webassembly.958z1vx7fr.js"></script>
 </body>
 

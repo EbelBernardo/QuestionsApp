@@ -5,44 +5,130 @@
 @inject QuestionService QuestionService
 @inject CategoryService CategoryService
 
-<h3>Perguntas</h3>
+<div class="container mt-4">
 
-<EditForm Model="_question" OnValidSubmit="CreateQuestion">
-    <InputText @bind-Value="_question.Statement"></InputText>
-    <InputText @bind-Value="_question.Answer"></InputText>
+    <h3 class="mb-4">@_category.Name</h3>
 
-    <button type="submit">
-        Criar Pergunta
-    </button>
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
 
-</EditForm>
+            <EditForm Model="_question" OnValidSubmit="CreateQuestion">
 
-@if (_questions.Count == 0)
-{
-    <p>No questions found.</p>
-}
-else
-{
-    <ul>
+                <div class="mb-3">
+                    <label class="form-label">Pergunta</label>
+                    <InputTextArea class="form-control"
+                               @bind-Value="_question.Statement" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Resposta</label>
+                    <InputTextArea class="form-control"
+                               @bind-Value="_question.Answer" />
+                </div>
+
+                <button class="btn btn-outline-primary" type="submit">
+                    Criar Pergunta
+                </button>
+
+            </EditForm>
+
+        </div>
+    </div>
+
+    @if (_questions.Count == 0)
+    {
+        <div class="alert alert-info">
+            Nenhuma pergunta cadastrada.
+        </div>
+    }
+    else
+    {
         @foreach (var question in _questions)
         {
-            <li>
-                <details>
-                    <summary>
-                        @question.Statement
-                    </summary>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
 
-                    <p>
-                        @question.Answer
-                    </p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
 
-                    <button @onclick="() => DeleteQuestion(question.ID)">
-                        Delete
+                        <h5 class="card-title mb-0">
+                            @question.Statement
+                        </h5>
+
+                        <button class="btn btn-link p-0 eye-button"
+                                @onclick="() => ToggleAnswer(question.ID)">
+
+                            @if (_visibleAnswers.Contains(question.ID))
+                            {
+                                <i class="bi bi-eye"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-eye-slash"></i>
+                            }
+
+                        </button>
+
+                    </div>
+
+                    @if (_visibleAnswers.Contains(question.ID))
+                    {
+                        <p class="card-text">
+                            @question.Answer
+                        </p>
+                    }
+
+                    <button class="btn btn-outline-primary"
+                            @onclick="() => OpenEditModal(question)">
+                        Editar
                     </button>
-                </details>
-            </li>
+
+                    <button class="btn btn-outline-danger"
+                            @onclick="() => DeleteQuestion(question.ID)">
+                        Excluir
+                    </button>
+
+                </div>
+            </div>
         }
-    </ul>
+    }
+
+</div>
+
+@if (showEditModal)
+{
+    <div class="modal-background">
+
+        <div class="modal-box">
+
+            <h4>Editar Pergunta</h4>
+
+
+            <label>Pergunta</label>
+
+            <InputTextArea class="form-control mb-3"
+                           @bind-Value="editingQuestion.Statement" />
+
+
+            <label>Resposta</label>
+
+            <InputTextArea class="form-control mb-3"
+                           @bind-Value="editingQuestion.Answer" />
+
+
+            <button class="btn btn-outline-secondary"
+                    @onclick="CloseEditModal">
+                Cancelar
+            </button>
+
+
+            <button class="btn btn-outline-primary"
+                    @onclick="SaveEdit">
+                Salvar
+            </button>
+
+        </div>
+
+    </div>
 }
 
 @code {
@@ -52,6 +138,12 @@ else
 
     private List<Question> _questions = [];
     private Question _question = new();
+    private Category _category = new();
+
+    private bool showEditModal;
+    private Question? editingQuestion;
+
+    private HashSet<Guid> _visibleAnswers = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -59,6 +151,7 @@ else
             return;
 
         await GetQuestions();
+        _category = await GetCategoryById(Id);
 
         StateHasChanged();
     }
@@ -66,10 +159,17 @@ else
     protected async Task<List<Question>> GetQuestions()
     {
         _questions = await QuestionService.GetAllAsync(Id);
-     
+
         StateHasChanged();
 
         return _questions;
+    }
+
+    protected async Task<Question> GetQuestionByID(Guid Id)
+    {
+        _question = await QuestionService.GetAsync(Id);
+
+        return _question;
     }
 
     protected async Task CreateQuestion()
@@ -95,5 +195,44 @@ else
     {
         var category = await CategoryService.GetAsync(id);
         return category;
+    }
+
+    private void OpenEditModal(Question question)
+    {
+        editingQuestion = new Question
+        {
+            ID = question.ID,
+            Statement = question.Statement,
+            Answer = question.Answer,
+            CategoryID = question.CategoryID,
+            CreatedAt = question.CreatedAt
+        };
+
+        showEditModal = true;
+    }
+
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        editingQuestion = null;
+    }
+
+
+    private async Task SaveEdit()
+    {
+        await QuestionService.UpdateAsync(
+            editingQuestion
+        );
+
+        showEditModal = false;
+
+        await GetQuestions();
+    }
+
+    private void ToggleAnswer(Guid id)
+    {
+        if (!_visibleAnswers.Add(id))
+            _visibleAnswers.Remove(id);
     }
 }

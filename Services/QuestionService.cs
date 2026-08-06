@@ -28,9 +28,9 @@ namespace Perguntas.Client.Services
             await _database.CreateQuestionAsync(question);
         }
 
-        public async Task UpdateAsync(int id, Question question)
+        public async Task UpdateAsync(Question question)
         {
-            await _database.UpdateQuestionAsync(id, question);
+            await _database.UpdateQuestionAsync(question);
         }
 
         public async Task DeleteAsync(Guid id)

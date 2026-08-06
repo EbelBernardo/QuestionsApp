@@ -29,9 +29,9 @@ namespace Perguntas.Client.Services
             await _database.CreateCategoryAsync(category);
         }
 
-        public async Task UpdateAsync(int id, Category category)
+        public async Task UpdateAsync(Category category)
         {
-            await _database.UpdateCategoryAsync(id, category);
+            await _database.UpdateCategoryAsync(category);
         }
 
         public async Task DeleteAsync(Guid id)

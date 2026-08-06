@@ -1,4 +1,7 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using Perguntas.Client.Services
+@inject ThemeService ThemeService
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Perguntas</a>
     </div>
@@ -6,25 +9,99 @@
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
+<div class="nav-scrollable"
+     onclick="if(event.target.closest('a.nav-link')) document.querySelector('.navbar-toggler').click()">
+
+
+    <nav class="nav flex-column menu-content flex-grow-1">
+
         <div class="nav-item px-3">
+
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+
+                <i class="bi bi-house-door-fill"></i>
+
+                <span>Home</span>
+
             </NavLink>
+
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="categories">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Matérias
-            </NavLink>
-        </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
     </nav>
+
+
+    <div class="settings-area">
+
+        <div class="nav-item px-3">
+
+            <button class="nav-link settings-button"
+                    @onclick="ToggleSettings">
+
+                <i class="bi bi-gear-fill"></i>
+
+                <span>
+                    Configurações
+                </span>
+
+                <i class="bi @(showSettings ? "bi-chevron-up" : "bi-chevron-down") ms-auto"></i>
+
+            </button>
+
+        </div>
+
+
+        @if (showSettings)
+        {
+            <div class="settings-content">
+
+                <div class="theme-option">
+
+                    <span>
+                        Tema
+                    </span>
+
+
+                    <label class="theme-switch">
+
+                        <input type="checkbox"
+                               checked="@dark"
+                               @onchange="ChangeTheme" />
+
+                        <span class="slider">
+                            <span class="icon"></span>
+                        </span>
+
+                    </label>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+
 </div>
 
+
+@code {
+
+    private bool dark;
+
+    private bool showSettings;
+
+    private void ToggleSettings()
+    {
+        showSettings = !showSettings;
+    }
+
+    private async Task ChangeTheme(ChangeEventArgs e)
+    {
+        dark = (bool)e.Value!;
+
+        await ThemeService.SetTheme(
+            dark ? "theme-dark" : "theme-light"
+        );
+    }
+
+}
