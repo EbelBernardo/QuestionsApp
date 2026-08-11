@@ -268,3 +268,22 @@ span {
         color: #bfbfbf !important;
         box-shadow: none !important;
     }
+
+/* ============================
+   QuestionsPage
+============================ */
+
+.answer-status {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+    .answer-status.correct {
+        background-color: #9BC7A5;
+    }
+
+    .answer-status.incorrect {
+        background-color: #EFA3A3;
+    }
