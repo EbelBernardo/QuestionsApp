@@ -77,15 +77,36 @@
                         </p>
                     }
 
-                    <button class="btn btn-outline-primary"
-                            @onclick="() => OpenEditModal(question)">
-                        Editar
-                    </button>
+                    <div class="d-flex justify-content-between align-items-center">
 
-                    <button class="btn btn-outline-danger"
-                            @onclick="() => DeleteQuestion(question.ID)">
-                        Excluir
-                    </button>
+                        <div>
+                            <button class="btn btn-outline-primary me-2"
+                                    @onclick="() => OpenEditModal(question)">
+                                Editar
+                            </button>
+
+                            <button class="btn btn-outline-danger"
+                                    @onclick="() => DeleteQuestion(question.ID)">
+                                Excluir
+                            </button>
+                        </div>
+
+                        <div>
+                            <span class="card-text me-2">
+                                @question.CorrectAnswers/@question.TimesAnswered
+                            </span>
+                            
+                            @if (question.LastAnswerCorrect)
+                            {
+                                <span class="answer-status correct"></span>
+                            }
+                            else
+                            {
+                                <span class="answer-status incorrect"></span>
+                            }
+                        </div>
+
+                    </div>
 
                 </div>
             </div>

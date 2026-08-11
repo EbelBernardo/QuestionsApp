@@ -39,10 +39,34 @@
     {
         @foreach (var category in _categories)
         {
+
+            var questionsCount = _questionsCount.GetValueOrDefault(category.ID, 0);
+
             <div class="card mb-3 shadow-sm">
                 <div class="card-body">
                     
-                    <h5 class="card-title">@category.Name</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+
+                        <h5 class="card-title mb-0">
+                            @category.Name
+                        </h5>
+
+                        <span>
+                            @if (questionsCount == 0)
+                            {
+                                <span>Nenhuma pergunta</span>
+                            }
+                            else if (questionsCount == 1)
+                            {
+                                <span>1 pergunta</span>
+                            }
+                            else
+                            {
+                                <span>@questionsCount perguntas</span>
+                            }
+                        </span>
+
+                    </div>
 
                     <p class="card-text"></p>
 
@@ -110,17 +134,37 @@
                     <textarea class="form-control mb-3" readonly>@CurrentQuestion?.Answer</textarea>
                 }
 
+                <div class="d-flex justify-content-between align-items-center">
 
-                <button class="btn btn-outline-primary me-2"
-                @onclick="Correct">
-                    Acertei
-                </button>
+                    <div>
+                        <button class="btn btn-outline-primary me-2"
+                        @onclick="() => Correct(CurrentQuestion)">
+                            Acertei
+                        </button>
 
 
-                <button class="btn btn-outline-danger"
-                @onclick="Wrong">
-                    Errei
-                </button>
+                        <button class="btn btn-outline-danger"
+                        @onclick="() => Wrong(CurrentQuestion)">
+                            Errei
+                        </button>
+                    </div>
+
+                    <div>
+                        <span class="card-text me-2">
+                            @CurrentQuestion.CorrectAnswers/@CurrentQuestion.TimesAnswered
+                        </span>
+                            
+                        @if (CurrentQuestion.LastAnswerCorrect)
+                        {
+                            <span class="answer-status correct"></span>
+                        }
+                            else
+                        {
+                            <span class="answer-status incorrect"></span>
+                        }
+                    </div>
+
+                </div>
             }
 
             @if (showResult)
@@ -150,6 +194,7 @@
     private Category _category = new();
 
     private List<Question> _questions = [];
+    private Dictionary<Guid, int> _questionsCount = new();
 
     private string _categoryName = string.Empty;
 
@@ -181,6 +226,18 @@
     private async Task<List<Category>> GetCategories()
     {
         _categories = await CategoryService.GetAllAsync();
+
+        _questionsCount.Clear();
+
+        foreach (var category in _categories)
+        {
+            _questions = await GetAllQuestions(category.ID);
+
+            _questionsCount[category.ID] = _questions.Count;
+        }
+
+        _categories = _categories.OrderBy(c => c.Name).ToList();
+
         return _categories;
     }
 
@@ -208,7 +265,13 @@
     private async Task<List<Question>> GetAllQuestions(Guid id)
     {
         _questions = await QuestionService.GetAllAsync(id);
+
         return _questions;
+    }
+
+    private async Task UpdateQuestion(Question question)
+    {
+        await QuestionService.UpdateAsync(question);
     }
 
     private async Task OpenCardModal(Guid id, string name)
@@ -233,14 +296,23 @@
         StateHasChanged();
     }
 
-    private void Correct()
+    private async Task Correct(Question question)
     {
+        question.LastAnswerCorrect = true;
+        question.TimesAnswered++;
+        question.CorrectAnswers++;
+        await UpdateQuestion(question);
+
         correctAnswers++;
         NextQuestion();
     }
 
-    private void Wrong()
+    private async Task Wrong(Question question)
     {
+        question.LastAnswerCorrect = false;
+        question.TimesAnswered++;
+        await UpdateQuestion(question);
+
         NextQuestion();
     }
 

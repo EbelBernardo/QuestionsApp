@@ -1,5 +1,5 @@
 ﻿const DATABASE_NAME = "PerguntasDB";
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 const STORES = {
     Categories: "Categories",
@@ -15,7 +15,10 @@ async function openDatabase() {
 
     return new Promise((resolve, reject) => {
 
-        const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+        const request = indexedDB.open(
+            DATABASE_NAME,
+            DATABASE_VERSION
+        );
 
         request.onerror = () => reject(request.error);
 
@@ -29,7 +32,9 @@ async function openDatabase() {
         request.onupgradeneeded = (event) => {
 
             const db = event.target.result;
+            const oldVersion = event.oldVersion;
 
+            // Criação inicial do banco
             if (!db.objectStoreNames.contains(STORES.Categories)) {
 
                 db.createObjectStore(STORES.Categories, {
@@ -43,6 +48,35 @@ async function openDatabase() {
                 db.createObjectStore(STORES.Questions, {
                     keyPath: "id"
                 });
+
+            }
+
+            // Atualização da versão 1 para a versão 2
+            if (oldVersion < 2) {
+
+                const transaction = event.target.transaction;
+
+                const store = transaction.objectStore(
+                    STORES.Questions
+                );
+
+                const request = store.getAll();
+
+                request.onsuccess = () => {
+
+                    const questions = request.result;
+
+                    questions.forEach(question => {
+
+                        question.timesAnswered ??= 0;
+                        question.correctAnswers ??= 0;
+                        question.lastAnswerCorrect ??= false;
+
+                        store.put(question);
+
+                    });
+
+                };
 
             }
 
