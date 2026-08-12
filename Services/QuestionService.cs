@@ -4,38 +4,56 @@ namespace Perguntas.Client.Services
 {
     public class QuestionService
     {
-        private readonly IndexedDbService _database;
+        private readonly Supabase.Client _supabase;
 
-        public QuestionService(IndexedDbService database)
+        public QuestionService(Supabase.Client supabase)
         {
-            _database = database;
+            _supabase = supabase;
         }
 
         public async Task<List<Question>> GetAllAsync(Guid categoryId)
         {
-            return await _database.GetQuestionsAsync(categoryId);
+            var response = await _supabase
+                .From<Question>()
+                .Where(q => q.CategoryID == categoryId)
+                .Get();
+
+            return response.Models;
         }
 
-        public async Task<Question> GetAsync(Guid id)
+        public async Task<Question?> GetAsync(Guid id)
         {
-            return await _database.GetQuestionAsync(id);
+            var response = await _supabase
+                .From<Question>()
+                .Where(q => q.ID == id)
+                .Single();
+
+            return response;
         }
 
         public async Task CreateAsync(Question question)
         {
             question.ID = Guid.NewGuid();
 
-            await _database.CreateQuestionAsync(question);
+            await _supabase
+                .From<Question>()
+                .Insert(question);
         }
 
         public async Task UpdateAsync(Question question)
         {
-            await _database.UpdateQuestionAsync(question);
+            await _supabase
+                .From<Question>()
+                .Where(q => q.ID == question.ID)
+                .Update(question);
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            await _database.DeleteQuestionAsync(id);
+            await _supabase
+                .From<Question>()
+                .Where(q => q.ID == id)
+                .Delete();
         }
     }
 }

@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Services\SupabaseTestService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="Pages\Cards.razor" />
   </ItemGroup>
 
@@ -18,6 +22,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.9" PrivateAssets="all" />
+    <PackageReference Include="Supabase" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>

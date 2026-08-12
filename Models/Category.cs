@@ -1,8 +1,15 @@
-﻿namespace Perguntas.Client.Models
+﻿using Supabase.Postgrest.Attributes;
+using Supabase.Postgrest.Models;
+
+namespace Perguntas.Client.Models
 {
-    public class Category
+    [Table("categories")]
+    public class Category : BaseModel
     {
+        [PrimaryKey("id", false)]
+        [Column("id")]
         public Guid ID { get; set; }
+        [Column("name")]
         public string Name { get; set; } = string.Empty;
     }
 }

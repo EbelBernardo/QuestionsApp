@@ -138,20 +138,20 @@
 
                     <div>
                         <button class="btn btn-outline-primary me-2"
-                        @onclick="() => Correct(CurrentQuestion)">
+                        @onclick="() => Correct(CurrentQuestion!)">
                             Acertei
                         </button>
 
 
                         <button class="btn btn-outline-danger"
-                        @onclick="() => Wrong(CurrentQuestion)">
+                        @onclick="() => Wrong(CurrentQuestion!)">
                             Errei
                         </button>
                     </div>
 
                     <div>
                         <span class="card-text me-2">
-                            @CurrentQuestion.CorrectAnswers/@CurrentQuestion.TimesAnswered
+                            @CurrentQuestion!.CorrectAnswers/@CurrentQuestion.TimesAnswered
                         </span>
                             
                         @if (CurrentQuestion.LastAnswerCorrect)
@@ -263,11 +263,7 @@
     }
 
     private async Task<List<Question>> GetAllQuestions(Guid id)
-    {
-        _questions = await QuestionService.GetAllAsync(id);
-
-        return _questions;
-    }
+        => await QuestionService.GetAllAsync(id);
 
     private async Task UpdateQuestion(Question question)
     {

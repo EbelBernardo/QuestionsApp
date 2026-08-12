@@ -115,7 +115,7 @@
 
 </div>
 
-@if (showEditModal)
+@if (showEditModal && editingQuestion is not null)
 {
     <div class="modal-background">
 
@@ -172,7 +172,7 @@
             return;
 
         await GetQuestions();
-        _category = await GetCategoryById(Id);
+        _category = await CategoryService.GetAsync(Id) ?? new();
 
         StateHasChanged();
     }
@@ -184,13 +184,6 @@
         StateHasChanged();
 
         return _questions;
-    }
-
-    protected async Task<Question> GetQuestionByID(Guid Id)
-    {
-        _question = await QuestionService.GetAsync(Id);
-
-        return _question;
     }
 
     protected async Task CreateQuestion()
@@ -210,12 +203,6 @@
         await QuestionService.DeleteAsync(id);
 
         await GetQuestions();
-    }
-
-    protected async Task<Category> GetCategoryById(Guid id)
-    {
-        var category = await CategoryService.GetAsync(id);
-        return category;
     }
 
     private void OpenEditModal(Question question)
@@ -242,11 +229,13 @@
 
     private async Task SaveEdit()
     {
-        await QuestionService.UpdateAsync(
-            editingQuestion
-        );
+        if (editingQuestion is null)
+            return;
+
+        await QuestionService.UpdateAsync(editingQuestion);
 
         showEditModal = false;
+        editingQuestion = null;
 
         await GetQuestions();
     }

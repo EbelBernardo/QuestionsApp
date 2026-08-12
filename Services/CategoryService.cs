@@ -5,38 +5,55 @@ namespace Perguntas.Client.Services
 {
     public class CategoryService
     {
-        private readonly IndexedDbService _database;
+        private readonly Supabase.Client _supabase;
 
-        public CategoryService(IndexedDbService database)
+        public CategoryService(Supabase.Client supabase)
         {
-            _database = database;
+            _supabase = supabase;
         }
 
         public async Task<List<Category>> GetAllAsync()
         {
-            return await _database.GetCategoriesAsync();
+            var response = await _supabase
+                .From<Category>()
+                .Get();
+
+            return response.Models;
         }
 
-        public async Task<Category> GetAsync(Guid id)
+        public async Task<Category?> GetAsync(Guid id)
         {
-            return await _database.GetCategoryAsync(id);
+            var response = await _supabase
+                .From<Category>()
+                .Where(c => c.ID == id)
+                .Single();
+
+            return response;
         }
 
         public async Task CreateAsync(Category category)
         {
             category.ID = Guid.NewGuid();
 
-            await _database.CreateCategoryAsync(category);
+            await _supabase
+                .From<Category>()
+                .Insert(category);
         }
 
         public async Task UpdateAsync(Category category)
         {
-            await _database.UpdateCategoryAsync(category);
+            await _supabase
+                .From<Category>()
+                .Where(c => c.ID == category.ID)
+                .Update(category);
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            await _database.DeleteCategoryAsync(id);
+            await _supabase
+                .From<Category>()
+                .Where(c => c.ID == id)
+                .Delete();
         }
     }
 }
