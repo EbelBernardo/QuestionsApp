@@ -11,6 +11,7 @@
 <div class="container mt-4">
 
     <h3 class="mb-4">Matérias</h3>
+    <h3 class="mb-4">Matérias - CI/CD funcionando 🚀</h3>
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -44,7 +45,7 @@
 
             <div class="card mb-3 shadow-sm">
                 <div class="card-body">
-                    
+
                     <div class="d-flex justify-content-between align-items-center mb-3">
 
                         <h5 class="card-title mb-0">
@@ -70,7 +71,8 @@
 
                     <p class="card-text"></p>
 
-                    <button class="btn btn-outline-secondary" @onclick="() => OpenCardModal(category.ID, category.Name)">Cards</button>
+                    <button class="btn btn-outline-secondary"
+                            @onclick="() => OpenCardModal(category.ID, category.Name)">Cards</button>
                     <button class="btn btn-outline-primary" @onclick="() => Questions(category.ID)">Perguntas</button>
                     <button class="btn btn-outline-danger" @onclick="() => DeleteCategory(category.ID)">Excluir</button>
 
@@ -94,9 +96,7 @@
 
                     <h4 class="mb-0">@_categoryName</h4>
 
-                    <button type="button"
-                            class="btn btn-link p-0 close-button"
-                            @onclick="CloseModal">
+                    <button type="button" class="btn btn-link p-0 close-button" @onclick="CloseModal">
 
                         <i class="bi bi-x-lg"></i>
 
@@ -112,9 +112,7 @@
 
                     <label class="mb-0">Resposta</label>
 
-                    <button type="button"
-                    class="btn btn-link p-0 eye-button"
-                    @onclick="() => _showAnswer = !_showAnswer">
+                    <button type="button" class="btn btn-link p-0 eye-button" @onclick="() => _showAnswer = !_showAnswer">
 
                         @if (_showAnswer)
                         {
@@ -137,14 +135,12 @@
                 <div class="d-flex justify-content-between align-items-center">
 
                     <div>
-                        <button class="btn btn-outline-primary me-2"
-                        @onclick="() => Correct(CurrentQuestion!)">
+                        <button class="btn btn-outline-primary me-2" @onclick="() => Correct(CurrentQuestion!)">
                             Acertei
                         </button>
 
 
-                        <button class="btn btn-outline-danger"
-                        @onclick="() => Wrong(CurrentQuestion!)">
+                        <button class="btn btn-outline-danger" @onclick="() => Wrong(CurrentQuestion!)">
                             Errei
                         </button>
                     </div>
@@ -153,12 +149,12 @@
                         <span class="card-text me-2">
                             @CurrentQuestion!.CorrectAnswers/@CurrentQuestion.TimesAnswered
                         </span>
-                            
+
                         @if (CurrentQuestion.LastAnswerCorrect)
                         {
                             <span class="answer-status correct"></span>
                         }
-                            else
+                        else
                         {
                             <span class="answer-status incorrect"></span>
                         }
@@ -175,8 +171,7 @@
 
                     <p>Você acertou @correctAnswers de @totalQuestions perguntas.</p>
 
-                    <button class="btn btn-outline-danger" 
-                        @onclick="() => CloseModal() ">
+                    <button class="btn btn-outline-danger" @onclick="() => CloseModal()">
                         Fechar
                     </button>
 
@@ -206,8 +201,8 @@
     private int correctAnswers = 0;
 
     private Question? CurrentQuestion =>
-        _questions.Count > 0 
-        ? _questions[currentQuestionIndex] 
+        _questions.Count > 0
+        ? _questions[currentQuestionIndex]
         : null;
 
     private bool _showAnswer;
@@ -215,7 +210,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
-            return; 
+            return;
 
         await GetCategories();
 
