@@ -2,6 +2,7 @@
 @inject ThemeService ThemeService
 @inject AuthService AuthService
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -114,18 +115,35 @@
 @code {
 
     private bool dark;
-
     private bool showSettings;
 
     private string? userName;
 
     protected override async Task OnInitializedAsync()
     {
+        AuthService.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+        await UpdateUserProfile();
+    }
+
+    private async void OnAuthenticationStateChanged()
+    {
+        await UpdateUserProfile();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UpdateUserProfile()
+    {
         if (AuthService.IsAuthenticated)
         {
             var profile = await AuthService.GetCurrentProfileAsync();
 
             userName = profile?.Name;
+        }
+        else
+        {
+            userName = null;
         }
     }
 
@@ -150,4 +168,8 @@
         Navigation.NavigateTo("/login");
     }
 
+    public void Dispose()
+    {
+        AuthService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
 }

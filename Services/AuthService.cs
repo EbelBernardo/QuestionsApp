@@ -8,17 +8,18 @@ public class AuthService
 {
     private readonly Supabase.Client _supabase;
 
+    public event Action? AuthenticationStateChanged;
+
     public AuthService(Supabase.Client supabase)
     {
         _supabase = supabase;
     }
 
     public bool IsAuthenticated =>
-    _supabase.Auth.CurrentUser != null;
+        _supabase.Auth.CurrentUser != null;
 
     public string? CurrentUserId =>
-    _supabase.Auth.CurrentUser?.Id;
-
+        _supabase.Auth.CurrentUser?.Id;
 
     public async Task<bool> RegisterAsync(
         string name,
@@ -38,26 +39,38 @@ public class AuthService
             password,
             options);
 
-        return session?.User != null;
+        if (session?.User == null)
+            return false;
+
+        AuthenticationStateChanged?.Invoke();
+
+        return true;
     }
 
     public async Task<bool> LoginAsync(
-    string email,
-    string password)
+        string email,
+        string password)
     {
         var session = await _supabase.Auth.SignIn(
             email,
             password);
 
-        Console.WriteLine($"LOGIN USER: {session?.User?.Id}");
+        if (session?.User == null)
+            return false;
+
+        Console.WriteLine($"LOGIN USER: {session.User.Id}");
         Console.WriteLine($"CURRENT USER: {_supabase.Auth.CurrentUser?.Id}");
 
-        return session?.User != null;
+        AuthenticationStateChanged?.Invoke();
+
+        return true;
     }
 
     public async Task LogoutAsync()
     {
         await _supabase.Auth.SignOut();
+
+        AuthenticationStateChanged?.Invoke();
     }
 
     public async Task<Profile?> GetCurrentProfileAsync()
@@ -67,9 +80,11 @@ public class AuthService
 
         var userId = Guid.Parse(CurrentUserId!);
 
-        return await _supabase
+        var response = await _supabase
             .From<Profile>()
             .Where(p => p.Id == userId)
             .Single();
+
+        return response;
     }
 }

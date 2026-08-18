@@ -12,6 +12,9 @@ public class CustomAuthenticationStateProvider
         AuthService authService)
     {
         _authService = authService;
+
+        _authService.AuthenticationStateChanged +=
+            OnAuthenticationStateChanged;
     }
 
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -30,7 +33,9 @@ public class CustomAuthenticationStateProvider
         var identity = new ClaimsIdentity(
             new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, userId)
+                new Claim(
+                    ClaimTypes.NameIdentifier,
+                    userId)
             },
             authenticationType: "Supabase");
 
@@ -40,7 +45,7 @@ public class CustomAuthenticationStateProvider
             new AuthenticationState(user));
     }
 
-    public void NotifyAuthenticationStateChanged()
+    private void OnAuthenticationStateChanged()
     {
         NotifyAuthenticationStateChanged(
             GetAuthenticationStateAsync());
