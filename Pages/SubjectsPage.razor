@@ -1,6 +1,8 @@
 ﻿@page "/"
+@attribute [Authorize]
 @using Perguntas.Client.Services
 @using Perguntas.Client.Models
+@using Microsoft.AspNetCore.Authorization;
 
 @inject CategoryService CategoryService
 @inject QuestionService QuestionService

@@ -6,10 +6,12 @@ namespace Perguntas.Client.Services
     public class CategoryService
     {
         private readonly Supabase.Client _supabase;
+        private readonly AuthService _authService;
 
-        public CategoryService(Supabase.Client supabase)
+        public CategoryService(Supabase.Client supabase, AuthService authService)
         {
             _supabase = supabase;
+            _authService = authService;
         }
 
         public async Task<List<Category>> GetAllAsync()
@@ -33,7 +35,11 @@ namespace Perguntas.Client.Services
 
         public async Task CreateAsync(Category category)
         {
+            if (!_authService.IsAuthenticated)
+                throw new InvalidOperationException("Usuário não autenticado.");
+
             category.ID = Guid.NewGuid();
+            category.UserId = Guid.Parse(_authService.CurrentUserId!);
 
             await _supabase
                 .From<Category>()

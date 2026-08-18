@@ -1,5 +1,7 @@
 ﻿@using Perguntas.Client.Services
 @inject ThemeService ThemeService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -35,8 +37,18 @@
 
         <div class="nav-item px-3">
 
-            <button class="nav-link settings-button"
-                    @onclick="ToggleSettings">
+            @if (AuthService.IsAuthenticated && !string.IsNullOrWhiteSpace(userName))
+            {
+                <div class="nav-item px-3 user-profile">
+                    <div class="nav-link">
+                        <i class="bi bi-person-circle"></i>
+
+                        <span>@userName</span>
+                    </div>
+                </div>
+            }
+
+            <button class="nav-link settings-button" @onclick="ToggleSettings">
 
                 <i class="bi bi-gear-fill"></i>
 
@@ -64,9 +76,7 @@
 
                     <label class="theme-switch">
 
-                        <input type="checkbox"
-                               checked="@dark"
-                               @onchange="ChangeTheme" />
+                        <input type="checkbox" checked="@dark" @onchange="ChangeTheme" />
 
                         <span class="slider">
                             <span class="icon"></span>
@@ -75,6 +85,23 @@
                     </label>
 
                 </div>
+
+            </div>
+        }
+
+        @if (AuthService.IsAuthenticated)
+        {
+            <div class="nav-item px-3">
+
+                <button class="nav-link settings-button" @onclick="LogoutAsync">
+
+                    <i class="bi bi-box-arrow-right"></i>
+
+                    <span>
+                        Sair
+                    </span>
+
+                </button>
 
             </div>
         }
@@ -90,6 +117,18 @@
 
     private bool showSettings;
 
+    private string? userName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsAuthenticated)
+        {
+            var profile = await AuthService.GetCurrentProfileAsync();
+
+            userName = profile?.Name;
+        }
+    }
+
     private void ToggleSettings()
     {
         showSettings = !showSettings;
@@ -102,6 +141,13 @@
         await ThemeService.SetTheme(
             dark ? "theme-dark" : "theme-light"
         );
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+
+        Navigation.NavigateTo("/login");
     }
 
 }

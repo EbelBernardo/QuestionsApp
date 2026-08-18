@@ -25,5 +25,7 @@ namespace Perguntas.Client.Models
         public DateTime? LastReview { get; set; }
         [Column("category_id")]
         public Guid CategoryID { get; set; }
+        [Column("user_id")]
+        public Guid UserId { get; set; }
     }
 }

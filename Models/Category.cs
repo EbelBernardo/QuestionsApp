@@ -9,7 +9,11 @@ namespace Perguntas.Client.Models
         [PrimaryKey("id", false)]
         [Column("id")]
         public Guid ID { get; set; }
+
         [Column("name")]
         public string Name { get; set; } = string.Empty;
+
+        [Column("user_id")]
+        public Guid UserId { get; set; }
     }
 }

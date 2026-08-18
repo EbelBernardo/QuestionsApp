@@ -1,6 +1,8 @@
 ﻿@page "/questions/{Id:guid}"
+@attribute [Authorize]
 @using Perguntas.Client.Models
 @using Perguntas.Client.Services
+@using Microsoft.AspNetCore.Authorization
 
 @inject QuestionService QuestionService
 @inject CategoryService CategoryService
@@ -16,14 +18,12 @@
 
                 <div class="mb-3">
                     <label class="form-label">Pergunta</label>
-                    <InputTextArea class="form-control"
-                               @bind-Value="_question.Statement" />
+                    <InputTextArea class="form-control" @bind-Value="_question.Statement" />
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Resposta</label>
-                    <InputTextArea class="form-control"
-                               @bind-Value="_question.Answer" />
+                    <InputTextArea class="form-control" @bind-Value="_question.Answer" />
                 </div>
 
                 <button class="btn btn-outline-primary" type="submit">
@@ -54,8 +54,7 @@
                             @question.Statement
                         </h5>
 
-                        <button class="btn btn-link p-0 eye-button"
-                                @onclick="() => ToggleAnswer(question.ID)">
+                        <button class="btn btn-link p-0 eye-button" @onclick="() => ToggleAnswer(question.ID)">
 
                             @if (_visibleAnswers.Contains(question.ID))
                             {
@@ -80,13 +79,11 @@
                     <div class="d-flex justify-content-between align-items-center">
 
                         <div>
-                            <button class="btn btn-outline-primary me-2"
-                                    @onclick="() => OpenEditModal(question)">
+                            <button class="btn btn-outline-primary me-2" @onclick="() => OpenEditModal(question)">
                                 Editar
                             </button>
 
-                            <button class="btn btn-outline-danger"
-                                    @onclick="() => DeleteQuestion(question.ID)">
+                            <button class="btn btn-outline-danger" @onclick="() => DeleteQuestion(question.ID)">
                                 Excluir
                             </button>
                         </div>
@@ -95,7 +92,7 @@
                             <span class="card-text me-2">
                                 @question.CorrectAnswers/@question.TimesAnswered
                             </span>
-                            
+
                             @if (question.LastAnswerCorrect)
                             {
                                 <span class="answer-status correct"></span>
@@ -126,24 +123,20 @@
 
             <label>Pergunta</label>
 
-            <InputTextArea class="form-control mb-3"
-                           @bind-Value="editingQuestion.Statement" />
+            <InputTextArea class="form-control mb-3" @bind-Value="editingQuestion.Statement" />
 
 
             <label>Resposta</label>
 
-            <InputTextArea class="form-control mb-3"
-                           @bind-Value="editingQuestion.Answer" />
+            <InputTextArea class="form-control mb-3" @bind-Value="editingQuestion.Answer" />
 
 
-            <button class="btn btn-outline-secondary"
-                    @onclick="CloseEditModal">
+            <button class="btn btn-outline-secondary" @onclick="CloseEditModal">
                 Cancelar
             </button>
 
 
-            <button class="btn btn-outline-primary"
-                    @onclick="SaveEdit">
+            <button class="btn btn-outline-primary" @onclick="SaveEdit">
                 Salvar
             </button>
 

@@ -1,0 +1,120 @@
+﻿@page "/login"
+
+@using Perguntas.Client.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Login</PageTitle>
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+
+        <div class="col-12 col-md-6 col-lg-5">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <h3 class="mb-4 text-center">Entrar</h3>
+
+                    <EditForm Model="_model" OnValidSubmit="LoginAsync">
+
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+
+                            <InputText class="form-control" @bind-Value="_model.Email" type="email" />
+
+                            <ValidationMessage For="@(() => _model.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Senha</label>
+
+                            <InputText class="form-control" @bind-Value="_model.Password" type="password" />
+
+                            <ValidationMessage For="@(() => _model.Password)" />
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                @_errorMessage
+                            </div>
+                        }
+
+                        <button class="btn btn-outline-primary w-100" type="submit" disabled="@_loading">
+
+                            @(_loading ? "Entrando..." : "Entrar")
+
+                        </button>
+
+                    </EditForm>
+
+                    <div class="text-center mt-3">
+
+                        <span>Não possui uma conta?</span>
+
+                        <a href="/register" class="ms-1">
+                            Criar conta
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+    private readonly LoginModel _model = new();
+
+    private bool _loading;
+    private string _errorMessage = string.Empty;
+
+    private async Task LoginAsync()
+    {
+        _errorMessage = string.Empty;
+        _loading = true;
+
+        try
+        {
+            var success = await AuthService.LoginAsync(
+                _model.Email,
+                _model.Password);
+
+            if (!success)
+            {
+                _errorMessage = "Não foi possível entrar.";
+                return;
+            }
+
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Password { get; set; } = string.Empty;
+    }
+}

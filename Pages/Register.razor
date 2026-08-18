@@ -1,0 +1,149 @@
+﻿@page "/register"
+
+@using Perguntas.Client.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Cadastro</PageTitle>
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+
+        <div class="col-12 col-md-6 col-lg-5">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <h3 class="mb-4 text-center">Criar conta</h3>
+
+                    <EditForm Model="_model" OnValidSubmit="RegisterAsync">
+
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Nome</label>
+
+                            <InputText class="form-control" @bind-Value="_model.Name" />
+
+                            <ValidationMessage For="@(() => _model.Name)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+
+                            <InputText class="form-control" @bind-Value="_model.Email" type="email" />
+
+                            <ValidationMessage For="@(() => _model.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Senha</label>
+
+                            <InputText class="form-control" @bind-Value="_model.Password" type="password" />
+
+                            <ValidationMessage For="@(() => _model.Password)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar senha</label>
+
+                            <InputText class="form-control" @bind-Value="_model.ConfirmPassword" type="password" />
+
+                            <ValidationMessage For="@(() => _model.ConfirmPassword)" />
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                @_errorMessage
+                            </div>
+                        }
+
+                        <button class="btn btn-outline-primary w-100" type="submit" disabled="@_loading">
+
+                            @(_loading ? "Cadastrando..." : "Cadastrar")
+
+                        </button>
+
+                    </EditForm>
+
+                    <div class="text-center mt-3">
+
+                        <span>Já possui uma conta?</span>
+
+                        <a href="/login" class="ms-1">
+                            Entrar
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+    private readonly RegisterModel _model = new();
+
+    private bool _loading;
+    private string _errorMessage = string.Empty;
+
+    private async Task RegisterAsync()
+    {
+        _errorMessage = string.Empty;
+        _loading = true;
+
+        try
+        {
+            if (_model.Password != _model.ConfirmPassword)
+            {
+                _errorMessage = "As senhas não coincidem.";
+                return;
+            }
+
+            var success = await AuthService.RegisterAsync(
+                _model.Name,
+                _model.Email,
+                _model.Password);
+
+            if (!success)
+            {
+                _errorMessage = "Não foi possível criar a conta.";
+                return;
+            }
+
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private class RegisterModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Password { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}
