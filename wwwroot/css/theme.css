@@ -1,103 +1,52 @@
 ﻿:root {
-    
-    --secondary: #65756C;
-    --secondary-hover: #526158;
-    /* ============================
-       Fundos
-    ============================ */
-
-    --background: #1F2226; /* Cinza escuro neutro */
-    --surface: #292D32; /* Cards */
-    --surface-hover: #343940; /* Hover */
-
-    --sidebar: #24282D; /* Menu lateral */
-    /* ============================
-       Identidade verde pastel
-    ============================ */
-
-    --primary: #9BC7A5; /* Verde sálvia claro */
-    --primary-hover: #B3D8BA; /* Verde mais suave */
-    /* ============================
-       Estados
-    ============================ */
-
-    --danger: #EFA3A3; /* Vermelho rosado */
-    --success: #A8D5B5; /* Verde sucesso */
-    --warning: #E8D49A; /* Amarelo pastel */
-    /* ============================
-       Textos
-    ============================ */
-
-    --text: #F1F3F2; /* Branco suave */
-    --text-secondary: #B8BEBC; /* Cinza claro */
-    /* ============================
-       Bordas e sombras
-    ============================ */
-
-    --border: #41464D;
-    --shadow: rgba(0,0,0,.35);
-    /* ============================
-       Bordas
-    ============================ */
-
-    --radius: 16px;
-    /* ============================
-       Botões
-    ============================ */
-    --secondary: #B8BEBC;
-    --secondary-hover: #D0D5D3;
+    --background: #14100B;
+    --surface: #1E1710;
+    --surface-hover: #261D14;
+    --surface-elevated: #2C2116;
+    --sidebar: #0F0C08;
+    --primary: #D9A653;
+    --primary-hover: #F0BF6E;
+    --secondary: #7C6C55;
+    --secondary-hover: #93816A;
+    --danger: #C96A54;
+    --success: #86A86C;
+    --warning: #D9AF5C;
+    --info: #6E93A6;
+    --text: #F5EBDA;
+    --text-secondary: #A9977C;
+    --text-on-primary: #1B1409;
+    --border: #33271A;
+    --shadow: rgba(0, 0, 0, .6);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 18px;
+    /* Sombras profundas — parte da identidade "premium" */
+    --shadow-sm: 0 2px 8px var(--shadow);
+    --shadow-md: 0 12px 28px var(--shadow);
+    --shadow-lg: 0 24px 60px var(--shadow);
+    --transition: .25s ease;
 }
 
-
-
-.theme-dark {
-    /* ============================
-       Fundos
-    ============================ */
-
-    --background: #F4F6F4; /*Cinza claro levemente esverdeado */
-    --surface: #FFFFFF; /*Cards */
-    --surface-hover: #EEF4EF; /*Hover */
-
-    --sidebar: #E8EFE9; /*Menu lateral */
-    /* ============================
-       Identidade
-    ============================ */
-
-    --primary: #86B89A; /*Verde sálvia pastel */
-    --primary-hover: #6FA985; /*Verde sálvia mais forte */
-    /* ============================
-       Estados
-    ============================ */
-
-    --danger: #E58B8B; /*Vermelho rosado suave*/
-    --success: #82C99B; /*Verde sucesso*/
-    --warning: #E8C878; /*Amarelo pastel*/
-    /* ============================
-       Textos
-    ============================ */
-
-    --text: #26332B; /*Verde/cinza escuro */
-    --text-secondary: #65756C; /* Cinza esverdeado */
-    /* ============================
-       Bordas e sombras
-    ============================ */
-
-    --border: #D9E3DA;
-    --shadow: rgba(38,51,43,.12);
-    /* ============================
-       Bordas
-    ============================ */
-
-    --radius: 16px;
-    /* ============================
-       Botões
-    ============================ */
+.theme-light {
+    --background: #F7EEDC;
+    --surface: #FFFCF4;
+    --surface-hover: #FBF1DC;
+    --surface-elevated: #FFFFFF;
+    --sidebar: #EFE1C2;
+    --primary: #9C6B27;
+    --primary-hover: #7F551C;
+    --secondary: #6F5F49;
+    --secondary-hover: #5A4C3A;
+    --danger: #A84E38;
+    --success: #4F7038;
+    --warning: #9C7420;
+    --info: #3F6879;
+    --text: #24190D;
+    --text-secondary: #62513A;
+    --text-on-primary: #FBF3DF;
+    --border: #E2D2AC;
+    --shadow: rgba(36, 25, 13, .22);
 }
-
-/* ============================
-   Bootstrap Overrides
-============================ */
 
 .alert-info {
     --bs-alert-bg: var(--surface) !important;
@@ -107,7 +56,6 @@
     color: var(--text) !important;
     border-color: var(--border) !important;
 }
-
 
     .alert-info::before,
     .alert-info::after,
