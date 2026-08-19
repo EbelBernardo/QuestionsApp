@@ -16,21 +16,27 @@ namespace Perguntas.Client.Services
 
         public async Task<List<Category>> GetAllAsync()
         {
-            var response = await _supabase
-                .From<Category>()
-                .Get();
+            return await _authService.ExecuteAsync(async () =>
+            {
+                var response = await _supabase
+                    .From<Category>()
+                    .Get();
 
-            return response.Models;
+                return response.Models;
+            }) ?? [];
         }
 
         public async Task<Category?> GetAsync(Guid id)
         {
-            var response = await _supabase
-                .From<Category>()
-                .Where(c => c.ID == id)
-                .Single();
+            return await _authService.ExecuteAsync(async () =>
+            {
+                var response = await _supabase
+                    .From<Category>()
+                    .Where(c => c.ID == id)
+                    .Single();
 
-            return response;
+                return response;
+            });
         }
 
         public async Task CreateAsync(Category category)
@@ -41,25 +47,40 @@ namespace Perguntas.Client.Services
             category.ID = Guid.NewGuid();
             category.UserId = Guid.Parse(_authService.CurrentUserId!);
 
-            await _supabase
-                .From<Category>()
-                .Insert(category);
+            await _authService.ExecuteAsync(async () =>
+            {
+                await _supabase
+                    .From<Category>()
+                    .Insert(category);
+
+                return true;
+            });
         }
 
         public async Task UpdateAsync(Category category)
         {
-            await _supabase
-                .From<Category>()
-                .Where(c => c.ID == category.ID)
-                .Update(category);
+            await _authService.ExecuteAsync(async () =>
+            {
+                await _supabase
+                    .From<Category>()
+                    .Where(c => c.ID == category.ID)
+                    .Update(category);
+
+                return true;
+            });
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            await _supabase
-                .From<Category>()
-                .Where(c => c.ID == id)
-                .Delete();
+            await _authService.ExecuteAsync(async () =>
+            {
+                await _supabase
+                    .From<Category>()
+                    .Where(c => c.ID == id)
+                    .Delete();
+
+                return true;
+            });
         }
     }
 }

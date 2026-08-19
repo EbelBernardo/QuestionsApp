@@ -73,6 +73,38 @@ public class AuthService
         AuthenticationStateChanged?.Invoke();
     }
 
+    public async Task<bool> HandleAuthenticationExceptionAsync(Exception ex)
+    {
+        if (ex is not Supabase.Postgrest.Exceptions.PostgrestException postgrestException)
+            return false;
+
+        if (postgrestException.Message.Contains("JWT expired") ||
+            postgrestException.Message.Contains("JWT issued at future") ||
+            postgrestException.Message.Contains("\"code\":\"PGRST303\""))
+        {
+            await LogoutAsync();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public async Task<T?> ExecuteAsync<T>(Func<Task<T>> action)
+    {
+        try
+        {
+            return await action();
+        }
+        catch (Exception ex)
+        {
+            if (await HandleAuthenticationExceptionAsync(ex))
+                return default;
+
+            throw;
+        }
+    }
+
     public async Task<Profile?> GetCurrentProfileAsync()
     {
         if (!IsAuthenticated)
@@ -80,11 +112,15 @@ public class AuthService
 
         var userId = Guid.Parse(CurrentUserId!);
 
-        var response = await _supabase
-            .From<Profile>()
-            .Where(p => p.Id == userId)
-            .Single();
+        return await ExecuteAsync(async () =>
+        {
+            var response = await _supabase
+                .From<Profile>()
+                .Where(p => p.Id == userId)
+                .Single();
 
-        return response;
+            return response;
+        });
     }
+
 }
