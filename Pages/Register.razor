@@ -1,91 +1,123 @@
-﻿@page "/register"
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Pages/Register.razor — MODEL-A-ATELIE
+    ──────────────────────────────────────────────────────────────────────────
+    Rota INALTERADA: "/register"
+    Layout NOVO: AuthLayout
+
+    ── LÓGICA PRESERVADA — LINHA POR LINHA ───────────────────────────────────
+      · classe RegisterModel com os mesmos DataAnnotations
+      · EditForm Model="_model" OnValidSubmit="RegisterAsync"
+      · verificação Password != ConfirmPassword com a mesma mensagem
+      · RegisterAsync() → AuthService.RegisterAsync(Name, Email, Password)
+      · mesma mensagem de erro, mesmo try/catch/finally, mesmo _loading
+      · Navigation.NavigateTo("/") em caso de sucesso
+
+    ── ADIÇÃO PURAMENTE VISUAL ───────────────────────────────────────────────
+      Medidor de força de senha. É contagem de caracteres no próprio
+      componente — não valida nada, não bloqueia o envio, não muda regra.
+      Se não quiser, apague o bloco .qa-strength e o método PasswordStrength.
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@page "/register"
+@layout AuthLayout
 
 @using Perguntas.Client.Services
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 
-<PageTitle>Cadastro</PageTitle>
+<PageTitle>Criar conta · QuestionsApp</PageTitle>
 
-<div class="container mt-4">
+<div class="qa-auth__box">
 
-    <div class="row justify-content-center">
+    <h1>Criar conta</h1>
+    <p class="qa-auth__lead">Só o essencial — leva menos de um minuto.</p>
 
-        <div class="col-12 col-md-6 col-lg-5">
+    <EditForm Model="_model" OnValidSubmit="RegisterAsync">
 
-            <div class="card shadow-sm">
+        <DataAnnotationsValidator />
 
-                <div class="card-body">
-
-                    <h3 class="mb-4 text-center">Criar conta</h3>
-
-                    <EditForm Model="_model" OnValidSubmit="RegisterAsync">
-
-                        <DataAnnotationsValidator />
-
-                        <div class="mb-3">
-                            <label class="form-label">Nome</label>
-
-                            <InputText class="form-control" @bind-Value="_model.Name" />
-
-                            <ValidationMessage For="@(() => _model.Name)" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-
-                            <InputText class="form-control" @bind-Value="_model.Email" type="email" />
-
-                            <ValidationMessage For="@(() => _model.Email)" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Senha</label>
-
-                            <InputText class="form-control" @bind-Value="_model.Password" type="password" />
-
-                            <ValidationMessage For="@(() => _model.Password)" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Confirmar senha</label>
-
-                            <InputText class="form-control" @bind-Value="_model.ConfirmPassword" type="password" />
-
-                            <ValidationMessage For="@(() => _model.ConfirmPassword)" />
-                        </div>
-
-                        @if (!string.IsNullOrWhiteSpace(_errorMessage))
-                        {
-                            <div class="alert alert-danger">
-                                @_errorMessage
-                            </div>
-                        }
-
-                        <button class="btn btn-outline-primary w-100" type="submit" disabled="@_loading">
-
-                            @(_loading ? "Cadastrando..." : "Cadastrar")
-
-                        </button>
-
-                    </EditForm>
-
-                    <div class="text-center mt-3">
-
-                        <span>Já possui uma conta?</span>
-
-                        <a href="/login" class="ms-1">
-                            Entrar
-                        </a>
-
-                    </div>
-
-                </div>
-
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="qa-alert qa-alert--danger" role="alert">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-alert"></use></svg>
+                <span>@_errorMessage</span>
             </div>
+        }
 
+        <div class="qa-field">
+            <label class="qa-label" for="qa-reg-name">Nome</label>
+            <InputText class="qa-input"
+                       id="qa-reg-name"
+                       autocomplete="name"
+                       placeholder="Como podemos te chamar?"
+                       @bind-Value="_model.Name" />
+            <ValidationMessage For="@(() => _model.Name)" />
         </div>
 
-    </div>
+        <div class="qa-field">
+            <label class="qa-label" for="qa-reg-email">Email</label>
+            <InputText class="qa-input"
+                       id="qa-reg-email"
+                       type="email"
+                       autocomplete="email"
+                       placeholder="voce@email.com"
+                       @bind-Value="_model.Email" />
+            <ValidationMessage For="@(() => _model.Email)" />
+        </div>
+
+        <div class="qa-field">
+            <label class="qa-label" for="qa-reg-password">Senha</label>
+            <InputText class="qa-input"
+                       id="qa-reg-password"
+                       type="password"
+                       autocomplete="new-password"
+                       placeholder="mínimo 6 caracteres"
+                       @bind-Value="_model.Password" />
+
+            @* Indicador visual — não interfere na validação *@
+            <div class="qa-strength" aria-hidden="true">
+                @for (var i = 1; i <= 4; i++)
+                {
+                    <i class="@(PasswordStrength >= i ? "is-on" : "")"></i>
+                }
+            </div>
+
+            <ValidationMessage For="@(() => _model.Password)" />
+        </div>
+
+        <div class="qa-field">
+            <label class="qa-label" for="qa-reg-confirm">Confirmar senha</label>
+            <InputText class="qa-input"
+                       id="qa-reg-confirm"
+                       type="password"
+                       autocomplete="new-password"
+                       placeholder="repita a senha"
+                       @bind-Value="_model.ConfirmPassword" />
+            <ValidationMessage For="@(() => _model.ConfirmPassword)" />
+        </div>
+
+        <button class="qa-btn qa-btn--primary qa-btn--lg qa-btn--block"
+                type="submit"
+                disabled="@_loading"
+                style="margin-top:8px">
+            @if (_loading)
+            {
+                <span class="qa-spinner" aria-hidden="true"></span>
+                <span>Cadastrando…</span>
+            }
+            else
+            {
+                <span>Criar conta</span>
+            }
+        </button>
+
+    </EditForm>
+
+    <p class="qa-auth__switch">
+        Já possui uma conta?
+        <a href="/login">Entrar</a>
+    </p>
 
 </div>
 
@@ -94,6 +126,29 @@
 
     private bool _loading;
     private string _errorMessage = string.Empty;
+
+    /// <summary>
+    /// Indicador visual de força (0 a 4). Não valida nada.
+    /// </summary>
+    private int PasswordStrength
+    {
+        get
+        {
+            var p = _model.Password;
+
+            if (string.IsNullOrEmpty(p))
+                return 0;
+
+            var score = 0;
+
+            if (p.Length >= 6) score++;
+            if (p.Length >= 10) score++;
+            if (p.Any(char.IsDigit)) score++;
+            if (p.Any(char.IsLetter) && p.Any(c => !char.IsLetterOrDigit(c))) score++;
+
+            return score;
+        }
+    }
 
     private async Task RegisterAsync()
     {

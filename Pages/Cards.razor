@@ -1,1 +1,454 @@
-﻿
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Pages/Cards.razor — MODO DE ESTUDO (arquivo estava VAZIO)
+    ──────────────────────────────────────────────────────────────────────────
+    Rota NOVA: "/cards/{Id:guid}"   ·   Layout: FocusLayout (sem menu)
+
+    ⚠ ANTES DE USAR: remova do Questions.csproj os dois ItemGroup que tratam
+      este arquivo como código C# em vez de componente Razor. Veja o passo 0
+      da documentação de implementação — sem isso o projeto não compila.
+
+    ── DE ONDE VEIO ESTE CÓDIGO ──────────────────────────────────────────────
+      Tudo abaixo é o modal de flashcards que vivia dentro de
+      Pages/SubjectsPage.razor. Os métodos foram movidos COM O MESMO NOME E O
+      MESMO CORPO:
+        · OpenCardModal(...)  → virou LoadSession() (mesmo conteúdo,
+                                 disparado pela rota em vez do clique)
+        · Correct(question)   → idêntico
+        · Wrong(question)     → idêntico
+        · NextQuestion()      → idêntico
+        · UpdateQuestion(q)   → idêntico (QuestionService.UpdateAsync)
+        · CloseModal()        → virou Exit() + Restart()
+
+    ── O QUE FOI ACRESCENTADO (só interface) ─────────────────────────────────
+      · Virada do card em 3D (_showAnswer já existia e controla a virada)
+      · Trilha de progresso da sessão
+      · Atalhos de teclado: espaço/enter vira · 1 errei · 2 acertei · Esc sai
+      · Tela de resultado com anel de percentual
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@page "/cards/{Id:guid}"
+@layout FocusLayout
+@attribute [Authorize]
+@using Perguntas.Client.Models
+@using Perguntas.Client.Services
+@using Questions.Components
+@using Microsoft.AspNetCore.Authorization
+
+@inject QuestionService QuestionService
+@inject CategoryService CategoryService
+@inject NavigationManager Navigation
+
+<PageTitle>Estudando @_category.Name · QuestionsApp</PageTitle>
+
+@*
+    tabindex="0" torna o container focável para que os atalhos de teclado
+    funcionem assim que a tela abre, sem precisar clicar antes.
+*@
+<div class="qa-focus"
+     style="@UiHelpers.SubjectStyle(Id)"
+     tabindex="0"
+     @ref="_focusElement"
+     @onkeydown="OnKeyDown">
+
+
+    @* ═══════════════ CABEÇALHO DA SESSÃO ═══════════════ *@
+    <header class="qa-focus__top">
+
+        <button type="button" class="qa-btn qa-btn--icon" @onclick="Exit" aria-label="Sair do estudo">
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-x"></use></svg>
+        </button>
+
+        <div class="qa-mark qa-mark--sm" aria-hidden="true">
+            @UiHelpers.Initials(_category.Name)
+        </div>
+
+        <div>
+            <div class="qa-focus__title">@_category.Name</div>
+            <div class="qa-focus__count">
+                @if (_loading)
+                {
+                    <span>carregando…</span>
+                }
+                else if (showResult)
+                {
+                    <span>sessão concluída</span>
+                }
+                else
+                {
+                    <span>card @(currentQuestionIndex + 1) de @totalQuestions</span>
+                }
+            </div>
+        </div>
+
+        @* Trilha: um traço por card. Verde acertou, vermelho errou,
+           terracota é o atual, neutro ainda não veio. *@
+        @if (!_loading && totalQuestions > 0)
+        {
+            <div class="qa-track" role="img" aria-label="@($"{correctAnswers} acertos e {_wrongAnswers} erros até agora")">
+                @for (var i = 0; i < totalQuestions; i++)
+                {
+                    var cls = _results.TryGetValue(i, out var ok)
+                        ? (ok ? "qa-track__step--ok" : "qa-track__step--bad")
+                        : (i == currentQuestionIndex && !showResult ? "qa-track__step--now" : "");
+
+                    <i class="qa-track__step @cls"></i>
+                }
+            </div>
+
+            <div class="qa-btnrow" style="margin-left:auto">
+                <span class="qa-chip qa-chip--success">
+                    <span class="qa-chip__dot" aria-hidden="true"></span>
+                    @correctAnswers @(correctAnswers == 1 ? "acerto" : "acertos")
+                </span>
+                <span class="qa-chip qa-chip--danger">
+                    <span class="qa-chip__dot" aria-hidden="true"></span>
+                    @_wrongAnswers @(_wrongAnswers == 1 ? "erro" : "erros")
+                </span>
+            </div>
+        }
+
+    </header>
+
+
+    @* ═══════════════ CORPO ═══════════════ *@
+    <div class="qa-focus__body">
+
+        @* ── CARREGANDO ─────────────────────────────────────────────── *@
+        @if (_loading)
+        {
+            <div class="qa-loading" role="status">
+                <span class="qa-spinner" aria-hidden="true"></span>
+                <span>Preparando seus cards…</span>
+            </div>
+        }
+
+        @* ── SEM PERGUNTAS ──────────────────────────────────────────────
+             Antes, abrir os cards de uma matéria vazia simplesmente não
+             fazia nada (havia um `return` silencioso). Agora há uma tela. *@
+        else if (totalQuestions == 0)
+        {
+            <div class="qa-empty" style="max-width:520px">
+                <div class="qa-empty__icon">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-question"></use></svg>
+                </div>
+                <h2 class="qa-empty__title">Nada para estudar ainda</h2>
+                <p class="qa-empty__text">
+                    Esta matéria não tem perguntas cadastradas. Escreva a primeira
+                    e o modo de estudo é liberado.
+                </p>
+                <a class="qa-btn qa-btn--primary" href="@($"/questions/{Id}")">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-plus"></use></svg>
+                    Cadastrar perguntas
+                </a>
+            </div>
+        }
+
+        @* ── RESULTADO ──────────────────────────────────────────────── *@
+        else if (showResult)
+        {
+            var pct = totalQuestions == 0 ? 0 : (int)Math.Round(correctAnswers * 100.0 / totalQuestions);
+
+            <div class="qa-result">
+
+                @* Mesmo componente .qa-ring que a futura tela de Dashboard usa *@
+                <div class="qa-ring qa-result__ring"
+                     style="--qa-ring-value:@pct; --qa-ring-size:132px"
+                     role="img"
+                     aria-label="@($"{pct} por cento de acerto")">
+                    <span class="qa-ring__value">@pct%</span>
+                </div>
+
+                <h2 class="qa-result__title">Sessão concluída</h2>
+
+                <p class="qa-result__text">
+                    Você acertou <strong>@correctAnswers</strong> de
+                    <strong>@totalQuestions</strong>
+                    @(totalQuestions == 1 ? "pergunta" : "perguntas").
+                </p>
+
+                <div class="qa-btnrow" style="justify-content:center">
+                    <button type="button" class="qa-btn qa-btn--lg qa-btn--primary" @onclick="Restart">
+                        <svg class="qa-ico" aria-hidden="true"><use href="#i-flip"></use></svg>
+                        Estudar de novo
+                    </button>
+                    <button type="button" class="qa-btn qa-btn--lg qa-btn--secondary" @onclick="Exit">
+                        Voltar para Matérias
+                    </button>
+                </div>
+
+                @*
+                    TODO(futuro): "Revisar só os que errei".
+                    Basta filtrar a lista antes de reiniciar:
+                        _questions = _questions.Where(q => !q.LastAnswerCorrect).ToList();
+                        Restart();
+                    Deixei de fora porque muda o comportamento da sessão, e
+                    isso é decisão sua.
+                *@
+
+            </div>
+        }
+
+        @* ── CARD ───────────────────────────────────────────────────── *@
+        else if (CurrentQuestion is not null)
+        {
+            @* O card inteiro também vira no clique — não só o botão. *@
+            <div class="qa-flip @(_showAnswer ? "is-flipped" : "")"
+                 @onclick="ToggleAnswer"
+                 style="cursor:pointer">
+                <div class="qa-flip__inner">
+
+                    @* FRENTE — pergunta *@
+                    <div class="qa-flip__face qa-flip__face--front" aria-hidden="@(_showAnswer ? "true" : "false")">
+                        <span class="qa-flip__label">Pergunta</span>
+                        <p class="qa-flip__question">@CurrentQuestion.Statement</p>
+                        <p class="qa-flip__hint">Pense na resposta antes de virar o card.</p>
+                    </div>
+
+                    @* VERSO — resposta *@
+                    <div class="qa-flip__face qa-flip__face--back" aria-hidden="@(_showAnswer ? "false" : "true")">
+                        <span class="qa-flip__label">Resposta</span>
+                        <p class="qa-flip__answer">@CurrentQuestion.Answer</p>
+                        <p class="qa-flip__hint">Você acertou?</p>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+    </div>
+
+
+    @* ═══════════════ AÇÕES ═══════════════ *@
+    @if (!_loading && totalQuestions > 0 && !showResult && CurrentQuestion is not null)
+    {
+        <div class="qa-focus__bar">
+
+            <button type="button"
+                    class="qa-btn qa-btn--lg qa-btn--outline"
+                    style="color:var(--qa-danger);border-color:var(--qa-danger)"
+                    @onclick="() => Wrong(CurrentQuestion!)">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-x"></use></svg>
+                Errei
+                <span class="qa-kbd" aria-hidden="true">1</span>
+            </button>
+
+            <button type="button"
+                    class="qa-btn qa-btn--lg qa-btn--secondary"
+                    @onclick="ToggleAnswer">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-flip"></use></svg>
+                @(_showAnswer ? "Ver pergunta" : "Virar card")
+                <span class="qa-kbd" aria-hidden="true">espaço</span>
+            </button>
+
+            <button type="button"
+                    class="qa-btn qa-btn--lg qa-btn--success"
+                    @onclick="() => Correct(CurrentQuestion!)">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-check"></use></svg>
+                Acertei
+                <span class="qa-kbd" aria-hidden="true">2</span>
+            </button>
+
+        </div>
+    }
+
+</div>
+
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    // ── ESTADO VINDO DO MODAL ANTIGO (mesmos nomes) ──────────────────────
+    private List<Question> _questions = [];
+    private Category _category = new();
+
+    private bool showResult;
+    private int currentQuestionIndex = 0;
+    private int totalQuestions => _questions.Count();
+    private int correctAnswers = 0;
+
+    private Question? CurrentQuestion =>
+        _questions.Count > 0 && currentQuestionIndex < _questions.Count
+        ? _questions[currentQuestionIndex]
+        : null;
+
+    private bool _showAnswer;
+
+    // ── ESTADO NOVO, SOMENTE DE INTERFACE ────────────────────────────────
+    private bool _loading = true;
+    private int _wrongAnswers = 0;
+    private readonly Dictionary<int, bool> _results = new();   // índice → acertou?
+    private ElementReference _focusElement;
+    private bool _focusRequested;
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    // CARGA DA SESSÃO
+    // É o antigo OpenCardModal, disparado pela rota.
+    // ══════════════════════════════════════════════════════════════════════
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadSession();
+
+            StateHasChanged();
+        }
+
+        // Coloca o foco no container para os atalhos funcionarem sem clique.
+        if (!_focusRequested && !_loading)
+        {
+            _focusRequested = true;
+
+            try
+            {
+                await _focusElement.FocusAsync();
+            }
+            catch
+            {
+                // Sem foco os botões continuam funcionando normalmente.
+            }
+        }
+    }
+
+    private async Task LoadSession()
+    {
+        _loading = true;
+
+        _questions = await QuestionService.GetAllAsync(Id);
+
+        _category = await CategoryService.GetAsync(Id) ?? new();
+
+        currentQuestionIndex = 0;
+        correctAnswers = 0;
+        _wrongAnswers = 0;
+        _results.Clear();
+
+        _showAnswer = false;
+        showResult = false;
+
+        _loading = false;
+    }
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    // LÓGICA DE RESPOSTA — MOVIDA SEM ALTERAÇÃO
+    // ══════════════════════════════════════════════════════════════════════
+    private async Task UpdateQuestion(Question question)
+    {
+        await QuestionService.UpdateAsync(question);
+    }
+
+    private async Task Correct(Question question)
+    {
+        question.LastAnswerCorrect = true;
+        question.TimesAnswered++;
+        question.CorrectAnswers++;
+
+        // TODO(dados): descomente para alimentar "revisada há X dias" nas
+        // telas de Matérias. A coluna LastReview já existe no modelo e no
+        // banco, só nunca foi preenchida.
+        // question.LastReview = DateTime.UtcNow;
+
+        await UpdateQuestion(question);
+
+        _results[currentQuestionIndex] = true;
+
+        correctAnswers++;
+
+        NextQuestion();
+    }
+
+    private async Task Wrong(Question question)
+    {
+        question.LastAnswerCorrect = false;
+        question.TimesAnswered++;
+
+        // TODO(dados): idem ao método acima.
+        // question.LastReview = DateTime.UtcNow;
+
+        await UpdateQuestion(question);
+
+        _results[currentQuestionIndex] = false;
+
+        _wrongAnswers++;
+
+        NextQuestion();
+    }
+
+    private void NextQuestion()
+    {
+        _showAnswer = false;
+
+        if (currentQuestionIndex < _questions.Count - 1)
+        {
+            currentQuestionIndex++;
+        }
+        else
+        {
+            showResult = true;
+        }
+    }
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    // INTERFACE
+    // ══════════════════════════════════════════════════════════════════════
+    private void ToggleAnswer()
+    {
+        _showAnswer = !_showAnswer;
+    }
+
+    private void Restart()
+    {
+        currentQuestionIndex = 0;
+        correctAnswers = 0;
+        _wrongAnswers = 0;
+        _results.Clear();
+
+        _showAnswer = false;
+        showResult = false;
+    }
+
+    private void Exit()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    // Atalhos: espaço/Enter vira o card · 1 errei · 2 acertei · Esc sai.
+    // Não usamos preventDefault de propósito: bloquear o keydown do container
+    // também bloquearia o Tab, e navegação por teclado vale mais do que evitar
+    // uma rolagem que quase nunca acontece (a tela ocupa exatamente a viewport).
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (_loading || showResult || CurrentQuestion is null)
+        {
+            if (e.Key == "Escape")
+                Exit();
+
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case " ":
+            case "Enter":
+                ToggleAnswer();
+                break;
+
+            case "1":
+                await Wrong(CurrentQuestion);
+                break;
+
+            case "2":
+                await Correct(CurrentQuestion);
+                break;
+
+            case "Escape":
+                Exit();
+                break;
+        }
+    }
+}

@@ -1,75 +1,92 @@
-﻿@page "/login"
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Pages/Login.razor — MODEL-A-ATELIE
+    ──────────────────────────────────────────────────────────────────────────
+    Rota INALTERADA: "/login"
+    Layout NOVO: AuthLayout (antes usava o MainLayout, e por isso mostrava o
+    menu lateral para quem ainda nem tinha entrado).
+
+    ── LÓGICA PRESERVADA — LINHA POR LINHA ───────────────────────────────────
+      · classe LoginModel com os mesmos DataAnnotations
+      · EditForm Model="_model" OnValidSubmit="LoginAsync"
+      · DataAnnotationsValidator + ValidationMessage nos dois campos
+      · LoginAsync() → AuthService.LoginAsync(_model.Email, _model.Password)
+      · mesma mensagem de erro, mesmo try/catch/finally, mesmo _loading
+      · Navigation.NavigateTo("/") em caso de sucesso
+
+      Só removi o Console.WriteLine("LOGIN OK - INDO PARA HOME"). Se quiser
+      manter, é só recolocar antes do NavigateTo.
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@page "/login"
+@layout AuthLayout
 
 @using Perguntas.Client.Services
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 
-<PageTitle>Login</PageTitle>
+<PageTitle>Entrar · QuestionsApp</PageTitle>
 
-<div class="container mt-4">
+<div class="qa-auth__box">
 
-    <div class="row justify-content-center">
+    <h1>Entrar</h1>
+    <p class="qa-auth__lead">Bem-vindo de volta. Continue de onde parou.</p>
 
-        <div class="col-12 col-md-6 col-lg-5">
+    <EditForm Model="_model" OnValidSubmit="LoginAsync">
 
-            <div class="card shadow-sm">
+        <DataAnnotationsValidator />
 
-                <div class="card-body">
-
-                    <h3 class="mb-4 text-center">Entrar</h3>
-
-                    <EditForm Model="_model" OnValidSubmit="LoginAsync">
-
-                        <DataAnnotationsValidator />
-
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-
-                            <InputText class="form-control" @bind-Value="_model.Email" type="email" />
-
-                            <ValidationMessage For="@(() => _model.Email)" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Senha</label>
-
-                            <InputText class="form-control" @bind-Value="_model.Password" type="password" />
-
-                            <ValidationMessage For="@(() => _model.Password)" />
-                        </div>
-
-                        @if (!string.IsNullOrWhiteSpace(_errorMessage))
-                        {
-                            <div class="alert alert-danger">
-                                @_errorMessage
-                            </div>
-                        }
-
-                        <button class="btn btn-outline-primary w-100" type="submit" disabled="@_loading">
-
-                            @(_loading ? "Entrando..." : "Entrar")
-
-                        </button>
-
-                    </EditForm>
-
-                    <div class="text-center mt-3">
-
-                        <span>Não possui uma conta?</span>
-
-                        <a href="/register" class="ms-1">
-                            Criar conta
-                        </a>
-
-                    </div>
-
-                </div>
-
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="qa-alert qa-alert--danger" role="alert">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-alert"></use></svg>
+                <span>@_errorMessage</span>
             </div>
+        }
 
+        <div class="qa-field">
+            <label class="qa-label" for="qa-login-email">Email</label>
+            <InputText class="qa-input"
+                       id="qa-login-email"
+                       type="email"
+                       autocomplete="email"
+                       placeholder="voce@email.com"
+                       @bind-Value="_model.Email" />
+            <ValidationMessage For="@(() => _model.Email)" />
         </div>
 
-    </div>
+        <div class="qa-field">
+            <label class="qa-label" for="qa-login-password">Senha</label>
+            <InputText class="qa-input"
+                       id="qa-login-password"
+                       type="password"
+                       autocomplete="current-password"
+                       placeholder="••••••••"
+                       @bind-Value="_model.Password" />
+            <ValidationMessage For="@(() => _model.Password)" />
+        </div>
+
+        <button class="qa-btn qa-btn--primary qa-btn--lg qa-btn--block"
+                type="submit"
+                disabled="@_loading"
+                style="margin-top:8px">
+            @if (_loading)
+            {
+                <span class="qa-spinner" aria-hidden="true"></span>
+                <span>Entrando…</span>
+            }
+            else
+            {
+                <span>Entrar</span>
+            }
+        </button>
+
+    </EditForm>
+
+    <p class="qa-auth__switch">
+        Não possui uma conta?
+        <a href="/register">Criar conta</a>
+    </p>
 
 </div>
 
@@ -95,8 +112,6 @@
                 _errorMessage = "Não foi possível entrar.";
                 return;
             }
-
-            Console.WriteLine("LOGIN OK - INDO PARA HOME");
 
             Navigation.NavigateTo("/");
         }

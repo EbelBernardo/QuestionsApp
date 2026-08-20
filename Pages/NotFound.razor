@@ -1,5 +1,40 @@
-﻿@page "/not-found"
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Pages/NotFound.razor
+    ──────────────────────────────────────────────────────────────────────────
+    Rota e layout INALTERADOS. Só ganhou um estado vazio decente, usando o
+    mesmo componente .qa-empty das demais telas.
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@page "/not-found"
 @layout MainLayout
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<PageTitle>Página não encontrada · QuestionsApp</PageTitle>
+
+<div class="qa-page qa-page--full">
+    <main class="qa-stage">
+        <div class="qa-sheet">
+
+            <div class="qa-empty" style="margin-top:var(--qa-s7)">
+
+                <div class="qa-empty__icon">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-info"></use></svg>
+                </div>
+
+                <h1 class="qa-empty__title">Página não encontrada</h1>
+
+                <p class="qa-empty__text">
+                    O endereço que você abriu não existe (ou não existe mais).
+                    Volte para suas matérias e continue de lá.
+                </p>
+
+                <a class="qa-btn qa-btn--primary" href="">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-grid"></use></svg>
+                    Ir para Matérias
+                </a>
+
+            </div>
+
+        </div>
+    </main>
+</div>

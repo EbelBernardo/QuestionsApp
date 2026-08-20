@@ -1,0 +1,61 @@
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Layout/AuthLayout.razor — NOVO ARQUIVO
+    ──────────────────────────────────────────────────────────────────────────
+    Layout das telas de Login e Registro.
+
+    Motivo de existir: hoje /login e /register usam o MainLayout e por isso
+    mostram o menu lateral para quem ainda não entrou — o que não faz sentido.
+
+    Estrutura: painel de arte à esquerda (blocos de cor) + formulário à
+    direita. O painel de arte é decorativo e some no mobile abaixo de 820px
+    (vira uma faixa de 230px no topo).
+
+    Os textos do painel são configuráveis pelos parâmetros abaixo, para o
+    Login e o Registro terem chamadas diferentes sem duplicar o layout.
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@inherits LayoutComponentBase
+
+<div class="qa-auth">
+
+    <div class="qa-auth__art">
+
+        @* Composição decorativa — puramente visual *@
+        <div class="qa-blocks" aria-hidden="true">
+            <i style="background:var(--qa-subj-1)"></i>
+            <i style="background:var(--qa-surface-2)"></i>
+            <i style="background:var(--qa-subj-3)"></i>
+            <i style="background:var(--qa-subj-2)"></i>
+            <i style="background:var(--qa-subj-1);opacity:.5"></i>
+            <i style="background:var(--qa-surface)"></i>
+            <i style="background:var(--qa-surface-2)"></i>
+            <i style="background:var(--qa-subj-4)"></i>
+            <i style="background:var(--qa-subj-2);opacity:.35"></i>
+        </div>
+
+        <div class="qa-auth__brand">
+            <div class="qa-brand" aria-hidden="true">Q</div>
+            <span>QuestionsApp</span>
+        </div>
+
+        <div class="qa-auth__copy">
+            <h2>Suas perguntas. Sua memória.</h2>
+            <p>Organize matérias, escreva perguntas e revise em cards até dominar o conteúdo.</p>
+        </div>
+
+        <div class="qa-auth__tags">
+            <span>Matérias</span>
+            <span aria-hidden="true">·</span>
+            <span>Perguntas</span>
+            <span aria-hidden="true">·</span>
+            <span>Cards</span>
+        </div>
+
+    </div>
+
+    <div class="qa-auth__form">
+        @Body
+    </div>
+
+</div>

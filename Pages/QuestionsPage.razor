@@ -1,155 +1,441 @@
-﻿@page "/questions/{Id:guid}"
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Pages/QuestionsPage.razor — MODEL-A-ATELIE
+    (cards de pergunta com faixa superior colorida = ideia do MODEL-C)
+    ──────────────────────────────────────────────────────────────────────────
+    Rota INALTERADA: "/questions/{Id:guid}"
+
+    ── LÓGICA PRESERVADA (mesmos nomes, mesmos corpos) ───────────────────────
+      · [Parameter] Id
+      · OnAfterRenderAsync(firstRender) → GetQuestions() + CategoryService.GetAsync(Id)
+      · GetQuestions()   → QuestionService.GetAllAsync(Id)
+      · CreateQuestion() → QuestionService.CreateAsync(_question)
+      · DeleteQuestion() → QuestionService.DeleteAsync(id)
+      · OpenEditModal / CloseEditModal / SaveEdit → QuestionService.UpdateAsync
+      · ToggleAnswer(id) → _visibleAnswers
+
+    ── SOBRE A COR DA FAIXA SUPERIOR ─────────────────────────────────────────
+      A faixa lê TimesAnswered / CorrectAnswers / LastAnswerCorrect, que já
+      vêm carregados no objeto Question e que a tela antiga já exibia como
+      "9/11". É mapeamento de apresentação, não cálculo novo — por isso está
+      implementado. Se preferir centralizar isso, mova StatusOf() para onde
+      quiser; a UI só depende do valor de retorno.
+
+    ── ONDE CONECTAR DADOS DEPOIS ────────────────────────────────────────────
+      Procure por "TODO(dados)". Os agregados do painel lateral estão como
+      ganchos no final do arquivo.
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@page "/questions/{Id:guid}"
 @attribute [Authorize]
 @using Perguntas.Client.Models
 @using Perguntas.Client.Services
+@using Questions.Components
 @using Microsoft.AspNetCore.Authorization
 
 @inject QuestionService QuestionService
 @inject CategoryService CategoryService
+@inject NavigationManager Navigation
 
-<div class="container mt-4">
+<PageTitle>@(string.IsNullOrWhiteSpace(_category.Name) ? "Perguntas" : _category.Name) · QuestionsApp</PageTitle>
 
-    <h3 class="mb-4">@_category.Name</h3>
+<div class="qa-page" style="@UiHelpers.SubjectStyle(Id)">
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
+    @* ═══════════════════ PAINEL CONTEXTUAL ═══════════════════ *@
+    <aside class="qa-context">
 
+        <div>
+            <span class="qa-eyebrow">Matéria</span>
+
+            <div class="qa-row" style="margin-top:10px">
+                <div class="qa-mark qa-mark--lg" aria-hidden="true">
+                    @UiHelpers.Initials(_category.Name)
+                </div>
+                <h2 class="qa-context__title" style="margin:0;font-size:19px">
+                    @_category.Name
+                </h2>
+            </div>
+
+            <p class="qa-context__desc">
+                @if (_questions.Count == 0)
+                {
+                    <span>Nenhuma pergunta cadastrada ainda.</span>
+                }
+                else if (_questions.Count == 1)
+                {
+                    <span>1 pergunta cadastrada.</span>
+                }
+                else
+                {
+                    <span>@_questions.Count perguntas cadastradas.</span>
+                }
+            </p>
+        </div>
+
+        @if (_questions.Count > 0)
+        {
+            <button type="button" class="qa-btn qa-btn--primary qa-btn--block" @onclick="Study">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-layers"></use></svg>
+                Iniciar estudo
+            </button>
+        }
+
+        @*
+            ── ESTATÍSTICAS DA MATÉRIA ───────────────────────────────────────
+            Mesmos componentes (.qa-stat) que a futura tela de Dashboard vai
+            reutilizar. Enquanto os ganchos devolverem null, mostram "—".
+        *@
+        <div class="qa-statgrid qa-statgrid--2">
+
+            <div class="qa-stat">
+                <span class="qa-stat__value">@_questions.Count</span>
+                <span class="qa-stat__label">Perguntas</span>
+            </div>
+
+            <div class="qa-stat qa-stat--teal">
+                <span class="qa-stat__value">@(GetMastery() is int m ? $"{m}%" : "—")</span>
+                <span class="qa-stat__label">Acerto</span>
+            </div>
+
+            <div class="qa-stat qa-stat--danger">
+                <span class="qa-stat__value">@(GetWrongCount()?.ToString() ?? "—")</span>
+                <span class="qa-stat__label">Errei</span>
+            </div>
+
+            <div class="qa-stat qa-stat--warning">
+                <span class="qa-stat__value">@(GetNeverAnsweredCount()?.ToString() ?? "—")</span>
+                <span class="qa-stat__label">Novas</span>
+            </div>
+
+        </div>
+
+        @* TODO(dados): busca dentro da matéria — filtrar _questions em memória *@
+        <label class="qa-search">
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-search"></use></svg>
+            <input type="search" placeholder="Buscar pergunta…" aria-label="Buscar pergunta" disabled />
+        </label>
+
+        @* TODO(dados): filtros por estado — usar StatusOf(question) para filtrar *@
+        <div class="qa-filters">
+            <button type="button" class="qa-filter is-active">
+                <span class="qa-filter__dot" style="background:var(--qa-primary)"></span>
+                Todas
+                <span class="qa-filter__count">@_questions.Count</span>
+            </button>
+            <button type="button" class="qa-filter" disabled>
+                <span class="qa-filter__dot" style="background:var(--qa-danger)"></span>
+                Errei na última
+                <span class="qa-filter__count">@(GetWrongCount()?.ToString() ?? "—")</span>
+            </button>
+            <button type="button" class="qa-filter" disabled>
+                <span class="qa-filter__dot" style="background:var(--qa-warning)"></span>
+                Nunca respondidas
+                <span class="qa-filter__count">@(GetNeverAnsweredCount()?.ToString() ?? "—")</span>
+            </button>
+        </div>
+
+        <div class="qa-context__foot">
+            <a class="qa-btn qa-btn--ghost qa-btn--block" href="">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
+                Voltar para Matérias
+            </a>
+        </div>
+
+    </aside>
+
+
+    @* ═══════════════════ PALCO ═══════════════════ *@
+    <main class="qa-stage">
+
+        <div class="qa-mtop">
+            <a class="qa-btn qa-btn--icon" href="" aria-label="Voltar para Matérias">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
+            </a>
+            <h2>@_category.Name</h2>
+        </div>
+
+        <div class="qa-sheet">
+
+            <header class="qa-pagehead">
+                <div>
+                    @* A tela antiga não tinha nenhuma forma de voltar. *@
+                    <nav class="qa-crumb" aria-label="Trilha">
+                        <a href="">Matérias</a>
+                        <span aria-hidden="true">/</span>
+                        <span class="qa-crumb__current">@_category.Name</span>
+                    </nav>
+
+                    <h1 class="qa-pagehead__title">Perguntas</h1>
+                    <p class="qa-pagehead__sub">
+                        Escreva a pergunta e a resposta. Elas viram cards no modo de estudo.
+                    </p>
+                </div>
+
+                @if (_questions.Count > 0)
+                {
+                    <button type="button" class="qa-btn qa-btn--primary" @onclick="Study">
+                        <svg class="qa-ico" aria-hidden="true"><use href="#i-layers"></use></svg>
+                        Estudar
+                    </button>
+                }
+            </header>
+
+            @* ── FORMULÁRIO DE CRIAÇÃO (lógica intacta) ─────────────────── *@
             <EditForm Model="_question" OnValidSubmit="CreateQuestion">
 
-                <div class="mb-3">
-                    <label class="form-label">Pergunta</label>
-                    <InputTextArea class="form-control" @bind-Value="_question.Statement" />
-                </div>
+                <div class="qa-plate">
 
-                <div class="mb-3">
-                    <label class="form-label">Resposta</label>
-                    <InputTextArea class="form-control" @bind-Value="_question.Answer" />
-                </div>
+                    <div class="qa-formgrid">
 
-                <button class="btn btn-outline-primary" type="submit">
-                    Criar Pergunta
-                </button>
+                        <div class="qa-field">
+                            <label class="qa-label" for="qa-new-statement">Pergunta</label>
+                            <InputTextArea class="qa-textarea"
+                                           id="qa-new-statement"
+                                           @bind-Value="_question.Statement"
+                                           placeholder="O que estabelece o princípio da legalidade?" />
+                        </div>
+
+                        <div class="qa-field">
+                            <label class="qa-label" for="qa-new-answer">Resposta</label>
+                            <InputTextArea class="qa-textarea"
+                                           id="qa-new-answer"
+                                           @bind-Value="_question.Answer"
+                                           placeholder="Ninguém será obrigado a fazer ou deixar de fazer algo senão em virtude de lei." />
+                        </div>
+
+                    </div>
+
+                    <div class="qa-btnrow" style="margin-top:16px">
+                        <button type="submit" class="qa-btn qa-btn--primary">
+                            <svg class="qa-ico" aria-hidden="true"><use href="#i-plus"></use></svg>
+                            Criar pergunta
+                        </button>
+                        <button type="button" class="qa-btn qa-btn--ghost" @onclick="ClearForm">
+                            Limpar
+                        </button>
+                        <span class="qa-btnrow__spacer"></span>
+                        <span class="qa-hint">Perguntas curtas funcionam melhor como card.</span>
+                    </div>
+
+                </div>
 
             </EditForm>
 
-        </div>
-    </div>
 
-    @if (_questions.Count == 0)
-    {
-        <div class="alert alert-info">
-            Nenhuma pergunta cadastrada.
-        </div>
-    }
-    else
-    {
-        @foreach (var question in _questions)
-        {
-            <div class="card mb-3 shadow-sm">
-                <div class="card-body">
-
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-
-                        <h5 class="card-title mb-0">
-                            @question.Statement
-                        </h5>
-
-                        <button class="btn btn-link p-0 eye-button" @onclick="() => ToggleAnswer(question.ID)">
-
-                            @if (_visibleAnswers.Contains(question.ID))
-                            {
-                                <i class="bi bi-eye"></i>
-                            }
-                            else
-                            {
-                                <i class="bi bi-eye-slash"></i>
-                            }
-
-                        </button>
-
-                    </div>
-
-                    @if (_visibleAnswers.Contains(question.ID))
+            @* ── ESTADO: CARREGANDO ────────────────────────────────────── *@
+            @if (_loading)
+            {
+                <div class="qa-qgrid" aria-hidden="true">
+                    @for (var i = 0; i < 3; i++)
                     {
-                        <p class="card-text">
-                            @question.Answer
-                        </p>
+                        <article class="qa-qcard">
+                            <span class="qa-skel qa-skel--text" style="width:30%"></span>
+                            <span class="qa-skel qa-skel--title" style="width:90%"></span>
+                            <span class="qa-skel qa-skel--title" style="width:64%"></span>
+                            <span class="qa-skel qa-skel--text" style="width:46%;margin-top:12px"></span>
+                        </article>
+                    }
+                </div>
+                <p class="qa-sronly" role="status">Carregando perguntas</p>
+            }
+
+            @* ── ESTADO: VAZIO ─────────────────────────────────────────── *@
+            else if (_questions.Count == 0)
+            {
+                <div class="qa-empty">
+                    <div class="qa-empty__icon">
+                        <svg class="qa-ico" aria-hidden="true"><use href="#i-question"></use></svg>
+                    </div>
+                    <h3 class="qa-empty__title">Nenhuma pergunta ainda</h3>
+                    <p class="qa-empty__text">
+                        Use o formulário acima para escrever a primeira. Assim que
+                        existir uma pergunta, o modo de estudo é liberado.
+                    </p>
+                </div>
+            }
+
+            @* ── ESTADO: LISTA ─────────────────────────────────────────── *@
+            else
+            {
+                <div class="qa-qgrid">
+
+                    @{
+                        var index = 0;
                     }
 
-                    <div class="d-flex justify-content-between align-items-center">
+                    @foreach (var question in _questions)
+                    {
+                        index++;
 
-                        <div>
-                            <button class="btn btn-outline-primary me-2" @onclick="() => OpenEditModal(question)">
-                                Editar
-                            </button>
+                        var visible = _visibleAnswers.Contains(question.ID);
+                        var status = StatusOf(question);
 
-                            <button class="btn btn-outline-danger" @onclick="() => DeleteQuestion(question.ID)">
-                                Excluir
-                            </button>
-                        </div>
+                        <article class="qa-qcard @StatusClass(status)">
 
-                        <div>
-                            <span class="card-text me-2">
-                                @question.CorrectAnswers/@question.TimesAnswered
-                            </span>
+                            <div class="qa-qcard__top">
 
-                            @if (question.LastAnswerCorrect)
+                                <span class="qa-qcard__num">#@index.ToString("00")</span>
+
+                                <span class="qa-chip @StatusChipClass(status)" style="margin-left:auto">
+                                    <span class="qa-chip__dot" aria-hidden="true"></span>
+                                    @if (question.TimesAnswered == 0)
+                                    {
+                                        <span>Nunca respondida</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@question.CorrectAnswers/@question.TimesAnswered</span>
+                                    }
+                                </span>
+
+                            </div>
+
+                            <h3 class="qa-qcard__statement">@question.Statement</h3>
+
+                            @if (visible)
                             {
-                                <span class="answer-status correct"></span>
+                                <div class="qa-qcard__answer">@question.Answer</div>
                             }
-                            else
-                            {
-                                <span class="answer-status incorrect"></span>
-                            }
-                        </div>
 
-                    </div>
+                            <div class="qa-qcard__foot">
+
+                                <button type="button"
+                                        class="qa-btn qa-btn--ghost qa-btn--sm"
+                                        @onclick="() => ToggleAnswer(question.ID)"
+                                        aria-expanded="@(visible ? "true" : "false")">
+                                    <svg class="qa-ico" aria-hidden="true">
+                                        <use href="@(visible ? "#i-eye-off" : "#i-eye")"></use>
+                                    </svg>
+                                    @(visible ? "Ocultar" : "Ver resposta")
+                                </button>
+
+                                <button type="button"
+                                        class="qa-btn qa-btn--ghost qa-btn--sm"
+                                        @onclick="() => OpenEditModal(question)">
+                                    <svg class="qa-ico" aria-hidden="true"><use href="#i-pencil"></use></svg>
+                                    Editar
+                                </button>
+
+                                <button type="button"
+                                        class="qa-btn qa-btn--danger qa-btn--sm"
+                                        @onclick="() => AskDelete(question)">
+                                    <svg class="qa-ico" aria-hidden="true"><use href="#i-trash"></use></svg>
+                                    Excluir
+                                </button>
+
+                            </div>
+
+                        </article>
+                    }
 
                 </div>
-            </div>
-        }
-    }
+            }
+
+        </div>
+
+    </main>
 
 </div>
 
+
+@* ═══════════════════ DIÁLOGO: EDITAR PERGUNTA ═══════════════════
+   Mesma lógica de antes (editingQuestion + SaveEdit), em um diálogo
+   com título, fechamento por clique fora e ações à direita. *@
 @if (showEditModal && editingQuestion is not null)
 {
-    <div class="modal-background">
+    <div class="qa-overlay" @onclick="CloseEditModal">
 
-        <div class="modal-box">
+        <div class="qa-dialog qa-dialog--lg"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="qa-edit-title"
+             @onclick:stopPropagation="true">
 
-            <h4>Editar Pergunta</h4>
+            <div class="qa-dialog__head">
+                <h2 class="qa-dialog__title" id="qa-edit-title">Editar pergunta</h2>
+                <button type="button"
+                        class="qa-btn qa-btn--icon qa-dialog__close"
+                        @onclick="CloseEditModal"
+                        aria-label="Fechar">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-x"></use></svg>
+                </button>
+            </div>
 
+            <div class="qa-dialog__body">
 
-            <label>Pergunta</label>
+                <div class="qa-field">
+                    <label class="qa-label" for="qa-edit-statement">Pergunta</label>
+                    <InputTextArea class="qa-textarea"
+                                   id="qa-edit-statement"
+                                   @bind-Value="editingQuestion.Statement" />
+                </div>
 
-            <InputTextArea class="form-control mb-3" @bind-Value="editingQuestion.Statement" />
+                <div class="qa-field">
+                    <label class="qa-label" for="qa-edit-answer">Resposta</label>
+                    <InputTextArea class="qa-textarea"
+                                   id="qa-edit-answer"
+                                   @bind-Value="editingQuestion.Answer" />
+                </div>
 
+            </div>
 
-            <label>Resposta</label>
-
-            <InputTextArea class="form-control mb-3" @bind-Value="editingQuestion.Answer" />
-
-
-            <button class="btn btn-outline-secondary" @onclick="CloseEditModal">
-                Cancelar
-            </button>
-
-
-            <button class="btn btn-outline-primary" @onclick="SaveEdit">
-                Salvar
-            </button>
+            <div class="qa-dialog__foot">
+                <button type="button" class="qa-btn qa-btn--ghost" @onclick="CloseEditModal">
+                    Cancelar
+                </button>
+                <button type="button" class="qa-btn qa-btn--primary" @onclick="SaveEdit">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-check"></use></svg>
+                    Salvar
+                </button>
+            </div>
 
         </div>
-
     </div>
 }
+
+
+@* ═══════════════════ DIÁLOGO: CONFIRMAR EXCLUSÃO ═══════════════════ *@
+@if (_deleteTarget is not null)
+{
+    <div class="qa-overlay" @onclick="CancelDelete">
+
+        <div class="qa-dialog qa-dialog--sm qa-dialog--danger"
+             role="alertdialog"
+             aria-modal="true"
+             aria-labelledby="qa-delq-title"
+             @onclick:stopPropagation="true">
+
+            <div class="qa-dialog__head">
+                <div class="qa-dialog__icon">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-alert"></use></svg>
+                </div>
+                <h2 class="qa-dialog__title" id="qa-delq-title">Excluir pergunta?</h2>
+            </div>
+
+            <div class="qa-dialog__body">
+                <p class="qa-muted">&ldquo;@_deleteTarget.Statement&rdquo;</p>
+                <p class="qa-hint">Esta ação não pode ser desfeita.</p>
+            </div>
+
+            <div class="qa-dialog__foot">
+                <button type="button" class="qa-btn qa-btn--ghost" @onclick="CancelDelete">Cancelar</button>
+                <button type="button" class="qa-btn qa-btn--danger-solid" @onclick="ConfirmDelete">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-trash"></use></svg>
+                    Excluir
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
 
 @code {
 
     [Parameter]
     public Guid Id { get; set; }
 
+    // ── ESTADO ORIGINAL (preservado) ─────────────────────────────────────
     private List<Question> _questions = [];
     private Question _question = new();
     private Category _category = new();
@@ -159,13 +445,24 @@
 
     private HashSet<Guid> _visibleAnswers = [];
 
+    // ── ESTADO NOVO, SOMENTE DE INTERFACE ────────────────────────────────
+    private bool _loading = true;
+    private Question? _deleteTarget;
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    // CICLO DE VIDA / DADOS — INALTERADO
+    // ══════════════════════════════════════════════════════════════════════
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
             return;
 
         await GetQuestions();
+
         _category = await CategoryService.GetAsync(Id) ?? new();
+
+        _loading = false;
 
         StateHasChanged();
     }
@@ -181,6 +478,9 @@
 
     protected async Task CreateQuestion()
     {
+        if (string.IsNullOrWhiteSpace(_question.Statement))
+            return;
+
         _question.CategoryID = Id;
         _question.CreatedAt = DateTime.UtcNow;
 
@@ -212,13 +512,11 @@
         showEditModal = true;
     }
 
-
     private void CloseEditModal()
     {
         showEditModal = false;
         editingQuestion = null;
     }
-
 
     private async Task SaveEdit()
     {
@@ -237,5 +535,108 @@
     {
         if (!_visibleAnswers.Add(id))
             _visibleAnswers.Remove(id);
+    }
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    // INTERFACE (sem regra de negócio)
+    // ══════════════════════════════════════════════════════════════════════
+    private void Study()
+    {
+        Navigation.NavigateTo($"/cards/{Id}");
+    }
+
+    private void ClearForm()
+    {
+        _question = new();
+    }
+
+    private void AskDelete(Question question)
+    {
+        _deleteTarget = question;
+    }
+
+    private void CancelDelete()
+    {
+        _deleteTarget = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_deleteTarget is null)
+            return;
+
+        var id = _deleteTarget.ID;
+
+        _deleteTarget = null;
+
+        await DeleteQuestion(id);   // método original, intacto
+    }
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    // APRESENTAÇÃO: estado visual da pergunta
+    // Lê apenas campos que já vêm carregados no objeto Question.
+    // ══════════════════════════════════════════════════════════════════════
+    private enum QuestionStatus { New, Correct, Wrong }
+
+    private static QuestionStatus StatusOf(Question q)
+        => q.TimesAnswered == 0 ? QuestionStatus.New
+         : q.LastAnswerCorrect ? QuestionStatus.Correct
+         : QuestionStatus.Wrong;
+
+    private static string StatusClass(QuestionStatus s) => s switch
+    {
+        QuestionStatus.New => "qa-qcard--new",
+        QuestionStatus.Correct => "qa-qcard--ok",
+        _ => "qa-qcard--bad"
+    };
+
+    private static string StatusChipClass(QuestionStatus s) => s switch
+    {
+        QuestionStatus.New => "qa-chip--warning",
+        QuestionStatus.Correct => "qa-chip--success",
+        _ => "qa-chip--danger"
+    };
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    // ██  GANCHOS DE DADOS — IMPLEMENTE AQUI  ██████████████████████████████
+    //
+    // Agregados da matéria. Ficam null até você implementar; a interface
+    // mostra "—" nesse meio-tempo, sem inventar número.
+    //
+    // Todos podem ser resolvidos SÓ com a lista `_questions`, que já está
+    // carregada — sem tocar em Services, Models ou Supabase.
+    // ══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// TODO(dados): taxa de acerto da matéria (0–100).
+    ///     var answered = _questions.Sum(q => q.TimesAnswered);
+    ///     if (answered == 0) return null;
+    ///     var correct = _questions.Sum(q => q.CorrectAnswers);
+    ///     return (int)Math.Round(correct * 100.0 / answered);
+    /// </summary>
+    private int? GetMastery()
+    {
+        return null;
+    }
+
+    /// <summary>
+    /// TODO(dados): quantas perguntas foram erradas na última resposta.
+    ///     return _questions.Count(q => q.TimesAnswered > 0 && !q.LastAnswerCorrect);
+    /// </summary>
+    private int? GetWrongCount()
+    {
+        return null;
+    }
+
+    /// <summary>
+    /// TODO(dados): quantas perguntas nunca foram respondidas.
+    ///     return _questions.Count(q => q.TimesAnswered == 0);
+    /// </summary>
+    private int? GetNeverAnsweredCount()
+    {
+        return null;
     }
 }

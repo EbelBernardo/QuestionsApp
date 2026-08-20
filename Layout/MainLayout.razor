@@ -1,19 +1,36 @@
-﻿@inherits LayoutComponentBase
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Layout/MainLayout.razor — MODEL-A-ATELIE
+    ──────────────────────────────────────────────────────────────────────────
+    Casca da aplicação: menu lateral (NavMenu) + área principal.
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
+    O painel contextual (.qa-context) NÃO fica aqui — ele pertence a cada
+    página, porque o conteúdo dele muda por seção. Cada página renderiza:
+
+        <div class="qa-page">
+            <aside class="qa-context"> … </aside>
+            <main class="qa-stage">   … </main>
+        </div>
+
+    Páginas sem painel contextual usam <div class="qa-page qa-page--full">.
+
+    Login, Registro e Estudo NÃO usam este layout (usam AuthLayout e
+    FocusLayout) — por isso o menu não aparece mais nessas telas.
+
+    O #blazor-error-ui foi removido daqui: ele já existe no index.html e
+    estava duplicado (dois elementos com o mesmo id na página).
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@inherits LayoutComponentBase
+
+<a class="qa-skiplink" href="#qa-conteudo">Ir para o conteúdo</a>
+
+<div class="qa-shell">
+
+    <NavMenu />
+
+    <div class="qa-main" id="qa-conteudo">
+        @Body
     </div>
 
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
-
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
 </div>

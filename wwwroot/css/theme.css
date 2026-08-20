@@ -1,64 +1,190 @@
-﻿:root {
-    --background: #14100B;
-    --surface: #1E1710;
-    --surface-hover: #261D14;
-    --surface-elevated: #2C2116;
-    --sidebar: #0F0C08;
-    --primary: #D9A653;
-    --primary-hover: #F0BF6E;
-    --secondary: #7C6C55;
-    --secondary-hover: #93816A;
-    --danger: #C96A54;
-    --success: #86A86C;
-    --warning: #D9AF5C;
-    --info: #6E93A6;
-    --text: #F5EBDA;
-    --text-secondary: #A9977C;
-    --text-on-primary: #1B1409;
-    --border: #33271A;
-    --shadow: rgba(0, 0, 0, .6);
-    --radius: 12px;
-    --radius-sm: 8px;
-    --radius-lg: 18px;
-    /* Sombras profundas — parte da identidade "premium" */
-    --shadow-sm: 0 2px 8px var(--shadow);
-    --shadow-md: 0 12px 28px var(--shadow);
-    --shadow-lg: 0 24px 60px var(--shadow);
-    --transition: .25s ease;
+﻿/* ─────────────────────────────────────────────────────────────
+   1. TOKENS INDEPENDENTES DE TEMA
+   ───────────────────────────────────────────────────────────── */
+:root {
+    /* Tipografia */
+    --qa-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --qa-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --qa-fs-xs: 11px;
+    --qa-fs-sm: 12.5px;
+    --qa-fs-md: 14px;
+    --qa-fs-base: 15px;
+    --qa-fs-lg: 16.5px;
+    --qa-fs-xl: 21px;
+    --qa-fs-2xl: 27px;
+    --qa-fs-3xl: 32px;
+    --qa-lh-tight: 1.2;
+    --qa-lh-base: 1.55;
+    --qa-lh-loose: 1.7;
+    --qa-ls-label: .14em; /* letter-spacing dos micro-labels em caixa alta */
+    --qa-ls-title: -.025em;
+    /* Espaçamento (escala de 4) */
+    --qa-s1: 4px;
+    --qa-s2: 8px;
+    --qa-s3: 12px;
+    --qa-s4: 16px;
+    --qa-s5: 24px;
+    --qa-s6: 32px;
+    --qa-s7: 48px;
+    --qa-s8: 64px;
+    /* Raios */
+    --qa-r-sm: 8px;
+    --qa-r-md: 12px;
+    --qa-r-lg: 18px;
+    --qa-r-xl: 26px;
+    --qa-r-full: 999px;
+    /* Transições */
+    --qa-t-fast: .14s ease;
+    --qa-t: .22s cubic-bezier(.2, .7, .3, 1);
+    --qa-t-slow: .42s cubic-bezier(.2, .7, .3, 1);
+    /* Medidas estruturais */
+    --qa-rail-w: 92px; /* menu lateral (desktop) */
+    --qa-context-w: 288px; /* painel contextual da seção */
+    --qa-stage-max: 1180px; /* largura máxima do conteúdo */
+    --qa-dock-h: 72px; /* dock inferior (mobile) */
+    /* Alturas de controle */
+    --qa-h-sm: 32px;
+    --qa-h-md: 40px;
+    --qa-h-lg: 48px;
+    /* Camadas */
+    --qa-z-rail: 40;
+    --qa-z-dock: 60;
+    --qa-z-overlay: 900;
+    --qa-z-toast: 1000;
 }
 
-.theme-light {
-    --background: #F7EEDC;
-    --surface: #FFFCF4;
-    --surface-hover: #FBF1DC;
-    --surface-elevated: #FFFFFF;
-    --sidebar: #EFE1C2;
-    --primary: #9C6B27;
-    --primary-hover: #7F551C;
-    --secondary: #6F5F49;
-    --secondary-hover: #5A4C3A;
-    --danger: #A84E38;
-    --success: #4F7038;
-    --warning: #9C7420;
-    --info: #3F6879;
-    --text: #24190D;
-    --text-secondary: #62513A;
-    --text-on-primary: #FBF3DF;
-    --border: #E2D2AC;
-    --shadow: rgba(36, 25, 13, .22);
+/* ─────────────────────────────────────────────────────────────
+   2. TEMA ESCURO — PADRÃO
+   Base marrom quase-preta (neutro quente, nunca cinza-azulado).
+   Elevação feita por SOMBRA.
+   ───────────────────────────────────────────────────────────── */
+:root,
+body.theme-dark {
+    color-scheme: dark;
+    /* Superfícies */
+    --qa-bg: #16120E;
+    --qa-bg-rail: #100D0A;
+    --qa-bg-context: #1A1511;
+    --qa-surface: #1E1915;
+    --qa-surface-2: #262019;
+    --qa-surface-3: #2F2720;
+    /* Bordas */
+    --qa-border: #302823;
+    --qa-border-strong: #463A2F;
+    /* Cor primária — terracota */
+    --qa-primary: #D2694A;
+    --qa-primary-hover: #E38060;
+    --qa-primary-soft: rgba(210, 105, 74, .15);
+    --qa-primary-line: rgba(210, 105, 74, .42);
+    --qa-on-primary: #1A0D07;
+    /* Cor de apoio — teal/ciano */
+    --qa-teal: #5FA79B;
+    --qa-teal-hover: #74BCAF;
+    --qa-teal-soft: rgba(95, 167, 155, .15);
+    --qa-teal-line: rgba(95, 167, 155, .40);
+    --qa-on-teal: #061814;
+    /* Semânticas */
+    --qa-success: #7E9A5C;
+    --qa-success-soft: rgba(126, 154, 92, .16);
+    --qa-warning: #D89A4E;
+    --qa-warning-soft: rgba(216, 154, 78, .16);
+    --qa-danger: #CB5B42;
+    --qa-danger-soft: rgba(203, 91, 66, .16);
+    --qa-info: #5FA79B;
+    --qa-info-soft: rgba(95, 167, 155, .16);
+    /* Texto */
+    --qa-text: #F2E9DE;
+    --qa-text-2: #B3A392;
+    --qa-text-3: #7C6E60;
+    --qa-text-inverse: #16120E;
+    /* Sombras */
+    --qa-sh-1: 0 1px 2px rgba(0, 0, 0, .40);
+    --qa-sh-2: 0 8px 24px -8px rgba(0, 0, 0, .65);
+    --qa-sh-3: 0 24px 60px -12px rgba(0, 0, 0, .80);
+    --qa-scrim: rgba(10, 8, 6, .74);
+    /* Realce de foco (acessibilidade) */
+    --qa-focus-ring: 0 0 0 3px var(--qa-primary-soft);
+    /* Skeleton */
+    --qa-skel-a: #262019;
+    --qa-skel-b: #322A22;
+    /* ── PALETA DE IDENTIFICAÇÃO DE MATÉRIAS ──────────────────
+       Usada para dar "espaço de cor próprio" a cada matéria:
+       espinha do card, marca de iniciais, mini gráfico e barra.
+       6 cores para não repetir cedo demais. */
+    --qa-subj-1: #D2694A; /* terracota  */
+    --qa-subj-2: #5FA79B; /* teal       */
+    --qa-subj-3: #D89A4E; /* ocre       */
+    --qa-subj-4: #7E9A5C; /* oliva      */
+    --qa-subj-5: #B4705F; /* tijolo     */
+    --qa-subj-6: #6E8DA6; /* ardósia    */
 }
 
-.alert-info {
-    --bs-alert-bg: var(--surface) !important;
-    --bs-alert-color: var(--text) !important;
-    --bs-alert-border-color: var(--border) !important;
-    background-color: var(--surface) !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
+/* ─────────────────────────────────────────────────────────────
+   3. TEMA CLARO
+   Base areia / superfície creme.
+   Elevação feita por BORDA.
+   Acentos escurecem para manter contraste sobre creme.
+   ───────────────────────────────────────────────────────────── */
+body.theme-light {
+    color-scheme: light;
+    --qa-bg: #F5EFE5;
+    --qa-bg-rail: #EBE0CE;
+    --qa-bg-context: #F0E8DA;
+    --qa-surface: #FFFDF9;
+    --qa-surface-2: #F7F0E4;
+    --qa-surface-3: #FFFFFF;
+    --qa-border: #E2D6C2;
+    --qa-border-strong: #CDBCA1;
+    --qa-primary: #A8452A;
+    --qa-primary-hover: #8D3721;
+    --qa-primary-soft: rgba(168, 69, 42, .10);
+    --qa-primary-line: rgba(168, 69, 42, .34);
+    --qa-on-primary: #FFF7EE;
+    --qa-teal: #2F6F63;
+    --qa-teal-hover: #245A50;
+    --qa-teal-soft: rgba(47, 111, 99, .10);
+    --qa-teal-line: rgba(47, 111, 99, .32);
+    --qa-on-teal: #F2FBF8;
+    --qa-success: #4F6B33;
+    --qa-success-soft: rgba(79, 107, 51, .12);
+    --qa-warning: #92651C;
+    --qa-warning-soft: rgba(146, 101, 28, .12);
+    --qa-danger: #A63E28;
+    --qa-danger-soft: rgba(166, 62, 40, .12);
+    --qa-info: #2F6F63;
+    --qa-info-soft: rgba(47, 111, 99, .12);
+    --qa-text: #231A12;
+    --qa-text-2: #6B5A48;
+    --qa-text-3: #8E7B65;
+    --qa-text-inverse: #FFFDF9;
+    --qa-sh-1: 0 1px 2px rgba(58, 42, 26, .06);
+    --qa-sh-2: 0 8px 24px -12px rgba(58, 42, 26, .18);
+    --qa-sh-3: 0 24px 60px -18px rgba(58, 42, 26, .24);
+    --qa-scrim: rgba(35, 26, 18, .44);
+    --qa-focus-ring: 0 0 0 3px rgba(168, 69, 42, .22);
+    --qa-skel-a: #EFE7D9;
+    --qa-skel-b: #F8F2E8;
+    --qa-subj-1: #A8452A;
+    --qa-subj-2: #2F6F63;
+    --qa-subj-3: #92651C;
+    --qa-subj-4: #4F6B33;
+    --qa-subj-5: #8E5240;
+    --qa-subj-6: #46607A;
 }
 
-    .alert-info::before,
-    .alert-info::after,
-    .alert-info * {
-        color: var(--text) !important;
+/* ─────────────────────────────────────────────────────────────
+   4. RESPEITO A PREFERÊNCIAS DO SISTEMA
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --qa-t-fast: .01ms;
+        --qa-t: .01ms;
+        --qa-t-slow: .01ms;
     }
+
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}

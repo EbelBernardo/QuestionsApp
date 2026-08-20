@@ -1,213 +1,512 @@
-﻿@page "/"
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Pages/SubjectsPage.razor — MODEL-A-ATELIE
+    ──────────────────────────────────────────────────────────────────────────
+    Rota INALTERADA: "/"
+
+    ── LÓGICA PRESERVADA (mesmos nomes, mesmos corpos) ───────────────────────
+      · OnAfterRenderAsync(firstRender) → GetCategories()
+      · GetCategories()   → CategoryService.GetAllAsync() + contagem por matéria
+      · CreateCategory()  → CategoryService.CreateAsync(_category)
+      · DeleteCategory()  → CategoryService.DeleteAsync(id)
+      · Questions(id)     → Navigation.NavigateTo($"/questions/{id}")
+      · GetAllQuestions() → QuestionService.GetAllAsync(id)
+
+    ── O QUE SAIU DAQUI ──────────────────────────────────────────────────────
+      Todo o modal de flashcards (showCardModal, showQuestion, showResult,
+      currentQuestionIndex, correctAnswers, CurrentQuestion, _showAnswer,
+      OpenCardModal, Correct, Wrong, NextQuestion, CloseModal, UpdateQuestion)
+      foi MOVIDO, sem alteração de comportamento, para Pages/Cards.razor,
+      que agora é uma rota própria: /cards/{id}.
+
+    ── AJUSTE PONTUAL ────────────────────────────────────────────────────────
+      O campo `_questions` foi trocado por uma variável local dentro de
+      GetCategories(). Ele era compartilhado entre a contagem de perguntas e o
+      modal de estudo; se a contagem rodasse com o modal aberto, o baralho
+      trocava no meio da sessão. Como o modal saiu, o campo perdeu a razão de
+      existir. Comportamento idêntico.
+
+    ── ONDE CONECTAR DADOS DEPOIS ────────────────────────────────────────────
+      Procure por "TODO(dados)" neste arquivo. Todos os ganchos de
+      estatística estão isolados no final, no bloco marcado.
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@page "/"
 @attribute [Authorize]
 @using Perguntas.Client.Services
 @using Perguntas.Client.Models
-@using Microsoft.AspNetCore.Authorization;
+@using Questions.Components
+@using Microsoft.AspNetCore.Authorization
 
 @inject CategoryService CategoryService
 @inject QuestionService QuestionService
 @inject NavigationManager Navigation
 
-<PageTitle>Matérias</PageTitle>
+<PageTitle>Matérias · QuestionsApp</PageTitle>
 
-<div class="container mt-4">
+<div class="qa-page">
 
-    <h3 class="mb-4">Matérias</h3>
+    @* ═══════════════════ PAINEL CONTEXTUAL ═══════════════════ *@
+    <aside class="qa-context">
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <EditForm Model="_category" OnValidSubmit="CreateCategory">
+        <div>
+            <span class="qa-eyebrow">Biblioteca</span>
+            <h2 class="qa-context__title">Suas matérias</h2>
+            <p class="qa-context__desc">
+                Cada matéria guarda suas perguntas e o histórico de revisões.
+            </p>
+        </div>
 
-                <div class="mb-3">
-                    <InputText class="form-control" @bind-Value="_category.Name"></InputText>
-                </div>
+        @*
+            TODO(dados): busca de matérias.
+            O campo já está estilizado e acessível. Para ativar, basta filtrar
+            a lista que já está em memória — não precisa ir ao backend:
 
-                <button class="btn btn-outline-primary" type="submit">
-                    Criar Matéria
+                private string _search = string.Empty;
+                private IEnumerable<Category> FilteredCategories =>
+                    string.IsNullOrWhiteSpace(_search)
+                        ? _categories
+                        : _categories.Where(c => c.Name.Contains(
+                              _search, StringComparison.OrdinalIgnoreCase));
+
+            e trocar o @@bind-value abaixo + o foreach da grade.
+        *@
+        <label class="qa-search">
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-search"></use></svg>
+            <input type="search"
+                   placeholder="Buscar matéria…"
+                   aria-label="Buscar matéria"
+                   disabled />
+        </label>
+
+        @*
+            TODO(dados): filtros.
+            Os contadores estão como "—" de propósito: preencha com o resultado
+            das suas próprias contagens quando implementar.
+        *@
+        <div>
+            <span class="qa-eyebrow" style="margin-bottom:10px">Filtrar</span>
+            <div class="qa-filters">
+                <button type="button" class="qa-filter is-active">
+                    <span class="qa-filter__dot" style="background:var(--qa-primary)"></span>
+                    Todas
+                    <span class="qa-filter__count">@_categories.Count</span>
                 </button>
-
-            </EditForm>
+                <button type="button" class="qa-filter" disabled>
+                    <span class="qa-filter__dot" style="background:var(--qa-warning)"></span>
+                    Com pendências
+                    <span class="qa-filter__count">—</span>
+                </button>
+                <button type="button" class="qa-filter" disabled>
+                    <span class="qa-filter__dot" style="background:var(--qa-text-3)"></span>
+                    Sem perguntas
+                    <span class="qa-filter__count">@_questionsCount.Values.Count(v => v == 0)</span>
+                </button>
+            </div>
         </div>
-    </div>
 
+        @*
+            ── RESUMO ────────────────────────────────────────────────────────
+            Deliberadamente pequeno: dois números e um caminho para a futura
+            tela de estatísticas. A Home continua sendo sobre estudar, não
+            sobre olhar números.
 
-    @if (_categories.Count == 0)
-    {
-        <div class="alert alert-info">
-            Nenhuma matéria cadastrada.
-        </div>
-    }
-    else
-    {
-        @foreach (var category in _categories)
-        {
+            Os componentes .qa-stat / .qa-statgrid são os MESMOS que a tela de
+            Dashboard vai usar — inclusive na variante grande (.qa-stat--xl).
+        *@
+        <div class="qa-panel" style="padding:14px">
+            <span class="qa-eyebrow">Resumo</span>
 
-            var questionsCount = _questionsCount.GetValueOrDefault(category.ID, 0);
-
-            <div class="card mb-3 shadow-sm">
-                <div class="card-body">
-
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-
-                        <h5 class="card-title mb-0">
-                            @category.Name
-                        </h5>
-
-                        <span>
-                            @if (questionsCount == 0)
-                            {
-                                <span>Nenhuma pergunta</span>
-                            }
-                            else if (questionsCount == 1)
-                            {
-                                <span>1 pergunta</span>
-                            }
-                            else
-                            {
-                                <span>@questionsCount perguntas</span>
-                            }
-                        </span>
-
-                    </div>
-
-                    <p class="card-text"></p>
-
-                    <button class="btn btn-outline-secondary"
-                            @onclick="() => OpenCardModal(category.ID, category.Name)">Cards</button>
-                    <button class="btn btn-outline-primary" @onclick="() => Questions(category.ID)">Perguntas</button>
-                    <button class="btn btn-outline-danger" @onclick="() => DeleteCategory(category.ID)">Excluir</button>
-
+            <div class="qa-statgrid qa-statgrid--2" style="margin-top:10px">
+                <div class="qa-stat qa-stat--primary" style="background:none;border:0;padding:0">
+                    <span class="qa-stat__value">@_categories.Count</span>
+                    <span class="qa-stat__label">Matérias</span>
+                </div>
+                <div class="qa-stat qa-stat--teal" style="background:none;border:0;padding:0">
+                    <span class="qa-stat__value">@_questionsCount.Values.Sum()</span>
+                    <span class="qa-stat__label">Perguntas</span>
                 </div>
             </div>
-        }
-    }
+
+            @*
+                TODO(futuro): tela de Dashboard/Estatísticas.
+                Quando existir Pages/Statistics.razor com @@page "/estatisticas",
+                troque este <button disabled> por:
+                    <NavLink class="qa-btn qa-btn--ghost qa-btn--sm qa-btn--block"
+                             href="estatisticas"> … </NavLink>
+            *@
+            <button type="button"
+                    class="qa-btn qa-btn--ghost qa-btn--sm qa-btn--block"
+                    style="margin-top:12px"
+                    disabled
+                    data-qa-tip="Em breve">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-chart"></use></svg>
+                Ver estatísticas
+            </button>
+        </div>
+
+        <div class="qa-context__foot">
+            <button type="button" class="qa-btn qa-btn--primary qa-btn--block" @onclick="FocusNewCategory">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-plus"></use></svg>
+                Nova matéria
+            </button>
+        </div>
+
+    </aside>
+
+
+    @* ═══════════════════ PALCO ═══════════════════ *@
+    <main class="qa-stage">
+
+        @* Cabeçalho que só aparece no mobile *@
+        <div class="qa-mtop">
+            <div class="qa-brand" aria-hidden="true">Q</div>
+            <h2>Matérias</h2>
+        </div>
+
+        <div class="qa-sheet">
+
+            <header class="qa-pagehead">
+                <div>
+                    <h1 class="qa-pagehead__title">Suas matérias</h1>
+                    <p class="qa-pagehead__sub">
+                        @if (_loading)
+                        {
+                            <span>Carregando sua biblioteca…</span>
+                        }
+                        else if (_categories.Count == 0)
+                        {
+                            <span>Comece criando a primeira matéria.</span>
+                        }
+                        else
+                        {
+                            <span>Escolha uma matéria para revisar ou criar perguntas.</span>
+                        }
+                    </p>
+                </div>
+            </header>
+
+            @* ── FORMULÁRIO DE CRIAÇÃO ─────────────────────────────────────
+                 Virou uma faixa de UMA linha. No layout antigo era um card
+                 grande no topo da página, o que dizia que a atividade
+                 principal do app era cadastrar — e não é, é revisar.
+                 A lógica (EditForm + CreateCategory) é a mesma. *@
+            <EditForm Model="_category" OnValidSubmit="CreateCategory">
+                <div class="qa-plate qa-plate--inline">
+
+                    <div class="qa-field">
+                        <label class="qa-label" for="qa-new-category">Criar nova matéria</label>
+                        <InputText class="qa-input"
+                                   id="qa-new-category"
+                                   @ref="_newCategoryInput"
+                                   @bind-Value="_category.Name"
+                                   placeholder="Ex.: Direito Constitucional" />
+                    </div>
+
+                    <button type="submit" class="qa-btn qa-btn--primary">
+                        <svg class="qa-ico" aria-hidden="true"><use href="#i-plus"></use></svg>
+                        Criar matéria
+                    </button>
+
+                </div>
+            </EditForm>
+
+
+            @* ── ESTADO: CARREGANDO ────────────────────────────────────── *@
+            @if (_loading)
+            {
+                <div class="qa-grid" aria-hidden="true">
+                    @for (var i = 0; i < 3; i++)
+                    {
+                        <article class="qa-tile">
+                            <div class="qa-row">
+                                <span class="qa-skel" style="width:38px;height:38px;border-radius:12px"></span>
+                                <span class="qa-skel qa-skel--title" style="width:60%"></span>
+                            </div>
+                            <span class="qa-skel qa-skel--text" style="width:80%"></span>
+                            <span class="qa-skel qa-skel--text" style="width:40%"></span>
+                        </article>
+                    }
+                </div>
+                <p class="qa-sronly" role="status">Carregando matérias</p>
+            }
+
+            @* ── ESTADO: VAZIO ─────────────────────────────────────────── *@
+            else if (_categories.Count == 0)
+            {
+                <div class="qa-empty">
+                    <div class="qa-empty__icon">
+                        <svg class="qa-ico" aria-hidden="true"><use href="#i-book"></use></svg>
+                    </div>
+                    <h3 class="qa-empty__title">Nenhuma matéria ainda</h3>
+                    <p class="qa-empty__text">
+                        Uma matéria é onde suas perguntas moram. Crie a primeira
+                        acima — pode ser o assunto que você mais precisa revisar.
+                    </p>
+                </div>
+            }
+
+            @* ── ESTADO: LISTA ─────────────────────────────────────────── *@
+            else
+            {
+                <div class="qa-grid">
+
+                    @foreach (var category in _categories)
+                    {
+                        var questionsCount = _questionsCount.GetValueOrDefault(category.ID, 0);
+                        var hasQuestions = questionsCount > 0;
+
+                        // TODO(dados): ver bloco "GANCHOS DE DADOS" no final do arquivo.
+                        var mastery = GetMastery(category.ID);
+                        var trend = GetTrend(category.ID);
+                        var lastReview = GetLastReviewLabel(category.ID);
+
+                        <article class="qa-tile" style="@UiHelpers.SubjectStyle(category.ID)">
+
+                            <div class="qa-tile__head">
+
+                                <div class="qa-mark" aria-hidden="true">
+                                    @UiHelpers.Initials(category.Name)
+                                </div>
+
+                                <div style="min-width:0">
+                                    <h3 class="qa-tile__title">@category.Name</h3>
+
+                                    <p class="qa-tile__meta">
+                                        @if (!hasQuestions)
+                                        {
+                                            <span>Nenhuma pergunta ainda</span>
+                                        }
+                                        else if (questionsCount == 1)
+                                        {
+                                            <span>1 pergunta</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@questionsCount perguntas</span>
+                                        }
+
+                                        @if (lastReview is not null)
+                                        {
+                                            <i class="qa-sep" aria-hidden="true"></i>
+                                            <span>@lastReview</span>
+                                        }
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            @* ── MINI GRÁFICO + DOMÍNIO (ideia do MODEL-C) ──
+                                 Enquanto GetMastery/GetTrend devolverem null,
+                                 as barras ficam neutras e o valor mostra "—".
+                                 Nenhum número é inventado. *@
+                            <div class="qa-sparkrow">
+
+                                <span class="qa-sparkrow__label">Domínio</span>
+
+                                <div class="qa-spark @(trend is null ? "qa-spark--empty" : "")"
+                                     role="img"
+                                     aria-label="@(mastery is null ? "Sem dados de revisão" : $"Domínio de {mastery}%")">
+
+                                    @if (trend is null)
+                                    {
+                                        @for (var i = 0; i < 7; i++)
+                                        {
+                                            <i class="qa-spark__bar"></i>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        @foreach (var point in trend)
+                                        {
+                                            <i class="qa-spark__bar" style="height:@(Math.Clamp(point, 6, 100))%"></i>
+                                        }
+                                    }
+
+                                </div>
+
+                                <span class="qa-sparkrow__value">
+                                    @(mastery is null ? "—" : $"{mastery}%")
+                                </span>
+
+                            </div>
+
+                            @* ── AÇÕES ──────────────────────────────────────
+                                 "Estudar" é a ação primária (sólida).
+                                 "Perguntas" é secundária.
+                                 "Excluir" saiu da linha de frente e foi para o
+                                 menu ⋯ , com confirmação. *@
+                            <div class="qa-tile__actions">
+
+                                @if (hasQuestions)
+                                {
+                                    <button type="button"
+                                            class="qa-btn qa-btn--primary qa-btn--sm"
+                                            @onclick="() => Study(category.ID)">
+                                        <svg class="qa-ico" aria-hidden="true"><use href="#i-layers"></use></svg>
+                                        Estudar
+                                    </button>
+
+                                    <button type="button"
+                                            class="qa-btn qa-btn--outline qa-btn--sm"
+                                            @onclick="() => Questions(category.ID)">
+                                        Perguntas
+                                    </button>
+                                }
+                                else
+                                {
+                                    @* Antes o botão "Cards" simplesmente não fazia nada
+                                       quando a matéria estava vazia. Agora ele aparece
+                                       desabilitado e com explicação, e a ação oferecida
+                                       é a que realmente ajuda: escrever a 1ª pergunta. *@
+                                    <button type="button"
+                                            class="qa-btn qa-btn--secondary qa-btn--sm"
+                                            disabled
+                                            data-qa-tip="Cadastre uma pergunta primeiro">
+                                        <svg class="qa-ico" aria-hidden="true"><use href="#i-layers"></use></svg>
+                                        Estudar
+                                    </button>
+
+                                    <button type="button"
+                                            class="qa-btn qa-btn--outline qa-btn--sm"
+                                            @onclick="() => Questions(category.ID)">
+                                        <svg class="qa-ico" aria-hidden="true"><use href="#i-plus"></use></svg>
+                                        Adicionar pergunta
+                                    </button>
+                                }
+
+                                <div class="qa-dropdown qa-tile__more">
+
+                                    <button type="button"
+                                            class="qa-btn qa-btn--icon"
+                                            @onclick="() => ToggleMenu(category.ID)"
+                                            aria-haspopup="menu"
+                                            aria-expanded="@(_menuOpenFor == category.ID ? "true" : "false")"
+                                            aria-label="@($"Mais ações de {category.Name}")">
+                                        <svg class="qa-ico" aria-hidden="true"><use href="#i-dots"></use></svg>
+                                    </button>
+
+                                    @if (_menuOpenFor == category.ID)
+                                    {
+                                        <div class="qa-menu qa-menu--up" role="menu">
+
+                                            <button type="button"
+                                                    class="qa-menu__item"
+                                                    role="menuitem"
+                                                    @onclick="() => Questions(category.ID)">
+                                                <svg class="qa-ico" aria-hidden="true"><use href="#i-question"></use></svg>
+                                                Ver perguntas
+                                            </button>
+
+                                            @* TODO(futuro): renomear matéria.
+                                               O serviço já existe: CategoryService.UpdateAsync(category).
+                                               Basta abrir um diálogo com um input e chamar o método. *@
+
+                                            <div class="qa-menu__sep"></div>
+
+                                            <button type="button"
+                                                    class="qa-menu__item qa-menu__item--danger"
+                                                    role="menuitem"
+                                                    @onclick="() => AskDelete(category)">
+                                                <svg class="qa-ico" aria-hidden="true"><use href="#i-trash"></use></svg>
+                                                Excluir matéria
+                                            </button>
+
+                                        </div>
+                                    }
+
+                                </div>
+
+                            </div>
+
+                        </article>
+                    }
+
+                </div>
+            }
+
+        </div>
+
+    </main>
 
 </div>
 
-@if (showCardModal)
+
+@* ═══════════════════ CONFIRMAÇÃO DE EXCLUSÃO ═══════════════════
+   Antes a exclusão era imediata, sem aviso, num botão do mesmo peso
+   visual dos demais. *@
+@if (_deleteTarget is not null)
 {
-    <div class="modal-background">
+    <div class="qa-overlay" @onclick="CancelDelete">
 
-        <div class="modal-box">
+        <div class="qa-dialog qa-dialog--sm qa-dialog--danger"
+             role="alertdialog"
+             aria-modal="true"
+             aria-labelledby="qa-del-title"
+             @onclick:stopPropagation="true">
 
-            @if (showQuestion)
-            {
-
-                <div class="d-flex justify-content-between align-items-center mb-3">
-
-                    <h4 class="mb-0">@_categoryName</h4>
-
-                    <button type="button" class="btn btn-link p-0 close-button" @onclick="CloseModal">
-
-                        <i class="bi bi-x-lg"></i>
-
-                    </button>
-
+            <div class="qa-dialog__head">
+                <div class="qa-dialog__icon">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-alert"></use></svg>
                 </div>
+                <h2 class="qa-dialog__title" id="qa-del-title">Excluir matéria?</h2>
+            </div>
 
-                <label>Pergunta</label>
+            @{
+                var deleteCount = _questionsCount.GetValueOrDefault(_deleteTarget.ID, 0);
+            }
 
-                <textarea class="form-control mb-3" readonly>@CurrentQuestion?.Statement</textarea>
-
-                <div class="d-flex justify-content-between align-items-center mb-2">
-
-                    <label class="mb-0">Resposta</label>
-
-                    <button type="button" class="btn btn-link p-0 eye-button" @onclick="() => _showAnswer = !_showAnswer">
-
-                        @if (_showAnswer)
-                        {
-                            <i class="bi bi-eye"></i>
-                        }
-                        else
-                        {
-                            <i class="bi bi-eye-slash"></i>
-                        }
-
-                    </button>
-
-                </div>
-
-                @if (_showAnswer)
-                {
-                    <textarea class="form-control mb-3" readonly>@CurrentQuestion?.Answer</textarea>
-                }
-
-                <div class="d-flex justify-content-between align-items-center">
-
-                    <div>
-                        <button class="btn btn-outline-primary me-2" @onclick="() => Correct(CurrentQuestion!)">
-                            Acertei
-                        </button>
-
-
-                        <button class="btn btn-outline-danger" @onclick="() => Wrong(CurrentQuestion!)">
-                            Errei
-                        </button>
-                    </div>
-
-                    <div>
-                        <span class="card-text me-2">
-                            @CurrentQuestion!.CorrectAnswers/@CurrentQuestion.TimesAnswered
+            <div class="qa-dialog__body">
+                <p>
+                    <strong>@_deleteTarget.Name</strong> será removida.
+                    @if (deleteCount > 0)
+                    {
+                        <span>
+                            Ela tem @deleteCount @(deleteCount == 1 ? "pergunta" : "perguntas") cadastradas.
                         </span>
+                    }
+                </p>
+                <p class="qa-hint">Esta ação não pode ser desfeita.</p>
+            </div>
 
-                        @if (CurrentQuestion.LastAnswerCorrect)
-                        {
-                            <span class="answer-status correct"></span>
-                        }
-                        else
-                        {
-                            <span class="answer-status incorrect"></span>
-                        }
-                    </div>
-
-                </div>
-            }
-
-            @if (showResult)
-            {
-                <div class="mt-3">
-
-                    <h5>Resultado</h5>
-
-                    <p>Você acertou @correctAnswers de @totalQuestions perguntas.</p>
-
-                    <button class="btn btn-outline-danger" @onclick="() => CloseModal()">
-                        Fechar
-                    </button>
-
-                </div>
-            }
+            <div class="qa-dialog__foot">
+                <button type="button" class="qa-btn qa-btn--ghost" @onclick="CancelDelete">
+                    Cancelar
+                </button>
+                <button type="button" class="qa-btn qa-btn--danger-solid" @onclick="ConfirmDelete">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-trash"></use></svg>
+                    Excluir
+                </button>
+            </div>
 
         </div>
-
     </div>
 }
 
+
 @code {
 
+    // ── ESTADO ORIGINAL (preservado) ─────────────────────────────────────
     private List<Category> _categories = [];
     private Category _category = new();
-
-    private List<Question> _questions = [];
     private Dictionary<Guid, int> _questionsCount = new();
 
-    private string _categoryName = string.Empty;
+    // ── ESTADO NOVO, SOMENTE DE INTERFACE ────────────────────────────────
+    private bool _loading = true;               // controla skeleton
+    private Guid? _menuOpenFor;                 // menu ⋯ aberto
+    private Category? _deleteTarget;            // confirmação de exclusão
+    private InputText? _newCategoryInput;       // foco no campo de criação
 
-    private bool showCardModal;
-    private bool showQuestion;
-    private bool showResult;
-    private int currentQuestionIndex = 0;
-    private int totalQuestions => _questions.Count();
-    private int correctAnswers = 0;
 
-    private Question? CurrentQuestion =>
-        _questions.Count > 0
-        ? _questions[currentQuestionIndex]
-        : null;
-
-    private bool _showAnswer;
-
+    // ══════════════════════════════════════════════════════════════════════
+    // CICLO DE VIDA / DADOS — INALTERADO
+    //
+    // NOTA: mantive OnAfterRenderAsync como estava para não mexer no que já
+    // funciona. Se um dia quiser eliminar o "pisca" inicial, mova para:
+    //     protected override async Task OnInitializedAsync()
+    //     { await GetCategories(); }
+    // e apague este método. O resto do arquivo funciona igual.
+    // ══════════════════════════════════════════════════════════════════════
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -216,29 +515,37 @@
         await GetCategories();
 
         StateHasChanged();
-
     }
 
     private async Task<List<Category>> GetCategories()
     {
+        _loading = true;
+
         _categories = await CategoryService.GetAllAsync();
 
         _questionsCount.Clear();
 
         foreach (var category in _categories)
         {
-            _questions = await GetAllQuestions(category.ID);
+            // Variável LOCAL (antes era o campo _questions, compartilhado
+            // com o modal de estudo que hoje vive em Pages/Cards.razor).
+            var questions = await GetAllQuestions(category.ID);
 
-            _questionsCount[category.ID] = _questions.Count;
+            _questionsCount[category.ID] = questions.Count;
         }
 
         _categories = _categories.OrderBy(c => c.Name).ToList();
+
+        _loading = false;
 
         return _categories;
     }
 
     private async Task CreateCategory()
     {
+        if (string.IsNullOrWhiteSpace(_category.Name))
+            return;
+
         await CategoryService.CreateAsync(_category);
 
         _category = new();
@@ -253,82 +560,136 @@
         await GetCategories();
     }
 
-    private async Task Questions(Guid id)
+    private async Task<List<Question>> GetAllQuestions(Guid id)
+        => await QuestionService.GetAllAsync(id);
+
+    private void Questions(Guid id)
     {
         Navigation.NavigateTo($"/questions/{id}");
     }
 
-    private async Task<List<Question>> GetAllQuestions(Guid id)
-        => await QuestionService.GetAllAsync(id);
-
-    private async Task UpdateQuestion(Question question)
+    /// <summary>
+    /// Abre o modo de estudo. Antes isto abria um modal nesta mesma página;
+    /// agora é uma rota própria (Pages/Cards.razor).
+    /// </summary>
+    private void Study(Guid id)
     {
-        await QuestionService.UpdateAsync(question);
+        Navigation.NavigateTo($"/cards/{id}");
     }
 
-    private async Task OpenCardModal(Guid id, string name)
-    {
-        _categoryName = name;
 
-        _questions = await GetAllQuestions(id);
-        if (_questions.Count == 0)
-        {
-            // await JSRuntime.InvokeVoidAsync("alert", "Não há perguntas cadastradas para esta matéria.");
+    // ══════════════════════════════════════════════════════════════════════
+    // INTERFACE (sem regra de negócio)
+    // ══════════════════════════════════════════════════════════════════════
+    private void ToggleMenu(Guid id)
+    {
+        _menuOpenFor = _menuOpenFor == id ? null : id;
+    }
+
+    private void AskDelete(Category category)
+    {
+        _menuOpenFor = null;
+        _deleteTarget = category;
+    }
+
+    private void CancelDelete()
+    {
+        _deleteTarget = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_deleteTarget is null)
             return;
-        }
 
-        currentQuestionIndex = 0;
-        correctAnswers = 0;
+        var id = _deleteTarget.ID;
 
-        _showAnswer = false;
-        showQuestion = true;
-        showResult = false;
-        showCardModal = true;
+        _deleteTarget = null;
 
-        StateHasChanged();
+        await DeleteCategory(id);   // método original, intacto
     }
 
-    private async Task Correct(Question question)
+    private async Task FocusNewCategory()
     {
-        question.LastAnswerCorrect = true;
-        question.TimesAnswered++;
-        question.CorrectAnswers++;
-        await UpdateQuestion(question);
-
-        correctAnswers++;
-        NextQuestion();
+        if (_newCategoryInput?.Element is { } element)
+            await element.FocusAsync();
     }
 
-    private async Task Wrong(Question question)
-    {
-        question.LastAnswerCorrect = false;
-        question.TimesAnswered++;
-        await UpdateQuestion(question);
 
-        NextQuestion();
+    // ══════════════════════════════════════════════════════════════════════
+    // ██  GANCHOS DE DADOS — IMPLEMENTE AQUI  ██████████████████████████████
+    //
+    // Estes três métodos são o ÚNICO ponto da página que depende de cálculo.
+    // Enquanto devolverem null, a interface mostra estado neutro ("—" e
+    // barras apagadas) — nada é inventado na tela.
+    //
+    // Nenhum deles precisa de mudança em Services, Models ou Supabase: as
+    // perguntas já são carregadas em GetCategories(). Se você quiser, basta
+    // guardar a lista por matéria num dicionário lá e ler aqui.
+    // ══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// TODO(dados): domínio da matéria, de 0 a 100.
+    ///
+    /// Sugestão de implementação (some as perguntas da matéria):
+    ///     var answered = questions.Sum(q => q.TimesAnswered);
+    ///     if (answered == 0) return null;                 // sem histórico
+    ///     var correct = questions.Sum(q => q.CorrectAnswers);
+    ///     return (int)Math.Round(correct * 100.0 / answered);
+    ///
+    /// Retorne null quando não houver nenhuma resposta registrada — a UI já
+    /// trata esse caso mostrando "—".
+    /// </summary>
+    private int? GetMastery(Guid categoryId)
+    {
+        return null;
     }
 
-    private void NextQuestion()
+    /// <summary>
+    /// TODO(dados): série do mini gráfico. 7 valores de 0 a 100.
+    ///
+    /// O modelo atual (Question) NÃO guarda histórico por data, então uma
+    /// evolução temporal de verdade exigiria uma tabela nova de revisões.
+    /// Duas opções, da mais barata para a mais completa:
+    ///
+    ///   (a) Sem backend novo: distribua as perguntas da matéria em 7 faixas
+    ///       de acerto e devolva a altura de cada faixa. Vira um histograma
+    ///       de desempenho, não uma linha do tempo — e já é útil.
+    ///
+    ///   (b) Com backend novo (recomendado para o Dashboard): crie uma tabela
+    ///       `reviews` (id, question_id, user_id, correct, created_at) e
+    ///       grave uma linha a cada Correct()/Wrong() em Pages/Cards.razor.
+    ///       Aí sim dá para plotar os últimos 7 dias.
+    ///
+    /// Retorne null para manter as barras neutras.
+    /// </summary>
+    private IReadOnlyList<int>? GetTrend(Guid categoryId)
     {
-        _showAnswer = false;
-
-        if (currentQuestionIndex < _questions.Count - 1)
-        {
-            currentQuestionIndex++;
-        }
-        else
-        {
-            showQuestion = false;
-            showResult = true;
-        }
+        return null;
     }
 
-    private void CloseModal()
+    /// <summary>
+    /// TODO(dados): rótulo de última revisão ("hoje", "há 2 dias"…).
+    ///
+    /// O modelo Question JÁ TEM a coluna LastReview — mas ela nunca é
+    /// preenchida. Para ativar isto, grave a data em Pages/Cards.razor, nos
+    /// métodos Correct() e Wrong():
+    ///     question.LastReview = DateTime.UtcNow;
+    /// (o campo já está lá comentado, é só descomentar)
+    ///
+    /// Depois, aqui:
+    ///     var last = questions.Where(q => q.LastReview.HasValue)
+    ///                         .Max(q => q.LastReview);
+    ///     if (last is null) return null;
+    ///     var days = (DateTime.UtcNow - last.Value).Days;
+    ///     return days == 0 ? "revisada hoje"
+    ///          : days == 1 ? "revisada ontem"
+    ///          : $"revisada há {days} dias";
+    ///
+    /// Retorne null para simplesmente não mostrar a informação.
+    /// </summary>
+    private string? GetLastReviewLabel(Guid categoryId)
     {
-        showCardModal = false;
-        showQuestion = false;
-        showResult = false;
-        currentQuestionIndex = 0;
-        correctAnswers = 0;
+        return null;
     }
 }

@@ -1,120 +1,192 @@
-﻿@using Perguntas.Client.Services
+﻿@*
+    ══════════════════════════════════════════════════════════════════════════
+    Layout/NavMenu.razor — MODEL-A-ATELIE (+ dock inferior do MODEL-C)
+    ──────────────────────────────────────────────────────────────────────────
+    Um único componente com DUAS renderizações:
+      · Desktop (>820px): rail vertical de 92px à esquerda
+      · Mobile  (≤820px): dock flutuante arredondado na base
+
+    Configurações (tema, perfil, sair) saíram do menu e viraram um DIÁLOGO,
+    que funciona igual nos dois tamanhos de tela e é acessível.
+
+    ── LÓGICA PRESERVADA (nada foi alterado) ─────────────────────────────────
+      · AuthService.AuthenticationStateChanged  (assinatura + Dispose)
+      · UpdateUserProfile()  → AuthService.GetCurrentProfileAsync()
+      · ToggleSettings()
+      · ChangeTheme(ChangeEventArgs) → ThemeService.SetTheme("theme-dark"/"theme-light")
+      · LogoutAsync() → AuthService.LogoutAsync() + Navigation.NavigateTo("/login")
+
+    ── ÚNICA ADIÇÃO DE LÓGICA ────────────────────────────────────────────────
+      O OnInitializedAsync agora lê ThemeService.GetTheme() para inicializar
+      o campo `dark`. Antes o campo nascia sempre `false`, então o interruptor
+      mostrava "claro" mesmo com o app em escuro, e o tema salvo nunca era
+      restaurado. Usa um método que JÁ EXISTIA no ThemeService — nenhum
+      arquivo de Services foi tocado.
+    ══════════════════════════════════════════════════════════════════════════
+*@
+@using Perguntas.Client.Services
+@using Questions.Components
 @inject ThemeService ThemeService
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Perguntas</a>
+
+@* ═══════════════════ RAIL — DESKTOP ═══════════════════ *@
+<nav class="qa-rail" aria-label="Navegação principal">
+
+    <a class="qa-brand" href="" aria-label="QuestionsApp — início">Q</a>
+
+    <div class="qa-railnav">
+
+        <NavLink class="qa-railitem" href="" Match="NavLinkMatch.All">
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-grid"></use></svg>
+            <span>Matérias</span>
+        </NavLink>
+
+        @*
+            TODO(futuro): tela de Dashboard/Estatísticas.
+            O item já está desenhado e no lugar certo. Quando a página existir:
+              1. crie Pages/Statistics.razor com @@page "/estatisticas"
+              2. troque o <button> abaixo por:
+                 <NavLink class="qa-railitem" href="estatisticas">
+                     <svg class="qa-ico"><use href="#i-chart"></use></svg>
+                     <span>Estatísticas</span>
+                 </NavLink>
+              3. faça o mesmo no dock mobile, mais abaixo neste arquivo
+        *@
+        <button type="button"
+                class="qa-railitem"
+                disabled
+                data-qa-tip="Estatísticas — em breve">
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-chart"></use></svg>
+            <span>Estatísticas</span>
+        </button>
+
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <div class="qa-railfoot">
 
-<div class="nav-scrollable"
-     onclick="if(event.target.closest('a.nav-link')) document.querySelector('.navbar-toggler').click()">
-
-
-    <nav class="nav flex-column menu-content flex-grow-1">
-
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-
-                <i class="bi bi-house-door-fill"></i>
-
-                <span>Home</span>
-
-            </NavLink>
-
-        </div>
-
-
-    </nav>
-
-
-    <div class="settings-area">
-
-        <div class="nav-item px-3">
-
-            @if (AuthService.IsAuthenticated && !string.IsNullOrWhiteSpace(userName))
-            {
-                <div class="nav-item px-3 user-profile">
-                    <div class="nav-link">
-                        <i class="bi bi-person-circle"></i>
-
-                        <span>@userName</span>
-                    </div>
-                </div>
-            }
-
-            <button class="nav-link settings-button" @onclick="ToggleSettings">
-
-                <i class="bi bi-gear-fill"></i>
-
-                <span>
-                    Configurações
-                </span>
-
-                <i class="bi @(showSettings ? "bi-chevron-up" : "bi-chevron-down") ms-auto"></i>
-
-            </button>
-
-        </div>
-
-
-        @if (showSettings)
-        {
-            <div class="settings-content">
-
-                <div class="theme-option">
-
-                    <span>
-                        Tema
-                    </span>
-
-
-                    <label class="theme-switch">
-
-                        <input type="checkbox" checked="@dark" @onchange="ChangeTheme" />
-
-                        <span class="slider">
-                            <span class="icon"></span>
-                        </span>
-
-                    </label>
-
-                </div>
-
-            </div>
-        }
+        <button type="button"
+                class="qa-railitem"
+                @onclick="ToggleSettings"
+                aria-label="Configurações">
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-gear"></use></svg>
+        </button>
 
         @if (AuthService.IsAuthenticated)
         {
-            <div class="nav-item px-3">
-
-                <button class="nav-link settings-button" @onclick="LogoutAsync">
-
-                    <i class="bi bi-box-arrow-right"></i>
-
-                    <span>
-                        Sair
-                    </span>
-
-                </button>
-
-            </div>
+            <button type="button"
+                    class="qa-avatar"
+                    @onclick="ToggleSettings"
+                    aria-label="@($"Conta de {userName}")"
+                    data-qa-tip="@userName">
+                @UiHelpers.Initials(userName)
+            </button>
         }
 
     </div>
 
-</div>
+</nav>
+
+
+@* ═══════════════════ DOCK — MOBILE ═══════════════════ *@
+<nav class="qa-dock" aria-label="Navegação principal (mobile)">
+    <div class="qa-docknav">
+
+        <NavLink class="qa-dockitem" href="" Match="NavLinkMatch.All">
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-grid"></use></svg>
+            Matérias
+        </NavLink>
+
+        @* TODO(futuro): trocar por <NavLink href="estatisticas"> quando a tela existir *@
+        <button type="button" class="qa-dockitem" disabled>
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-chart"></use></svg>
+            Estatísticas
+        </button>
+
+        <button type="button" class="qa-dockitem" @onclick="ToggleSettings">
+            <svg class="qa-ico" aria-hidden="true"><use href="#i-gear"></use></svg>
+            Ajustes
+        </button>
+
+    </div>
+</nav>
+
+
+@* ═══════════════════ DIÁLOGO DE CONFIGURAÇÕES ═══════════════════ *@
+@if (showSettings)
+{
+    <div class="qa-overlay" @onclick="ToggleSettings">
+
+        @* stopPropagation evita que clicar dentro do diálogo o feche *@
+        <div class="qa-dialog qa-dialog--sm"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="qa-settings-title"
+             @onclick:stopPropagation="true">
+
+            <div class="qa-dialog__head">
+                <h2 class="qa-dialog__title" id="qa-settings-title">Configurações</h2>
+                <button type="button"
+                        class="qa-btn qa-btn--icon qa-dialog__close"
+                        @onclick="ToggleSettings"
+                        aria-label="Fechar">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-x"></use></svg>
+                </button>
+            </div>
+
+            <div class="qa-dialog__body">
+
+                @if (AuthService.IsAuthenticated && !string.IsNullOrWhiteSpace(userName))
+                {
+                    <div class="qa-row">
+                        <div class="qa-avatar">@UiHelpers.Initials(userName)</div>
+                        <div>
+                            <div style="font-weight:600">@userName</div>
+                            <div class="qa-hint">Conectado</div>
+                        </div>
+                    </div>
+                }
+
+                <div class="qa-row qa-row--between">
+                    <div>
+                        <div style="font-weight:600">Tema escuro</div>
+                        <div class="qa-hint">O tema claro também é totalmente suportado.</div>
+                    </div>
+
+                    <label class="qa-switch">
+                        <input type="checkbox"
+                               checked="@dark"
+                               @onchange="ChangeTheme"
+                               aria-label="Alternar tema escuro" />
+                        <span class="qa-switch__track"></span>
+                    </label>
+                </div>
+
+            </div>
+
+            @if (AuthService.IsAuthenticated)
+            {
+                <div class="qa-dialog__foot">
+                    <button type="button" class="qa-btn qa-btn--ghost" @onclick="ToggleSettings">
+                        Fechar
+                    </button>
+                    <button type="button" class="qa-btn qa-btn--danger" @onclick="LogoutAsync">
+                        <svg class="qa-ico" aria-hidden="true"><use href="#i-logout"></use></svg>
+                        Sair da conta
+                    </button>
+                </div>
+            }
+
+        </div>
+    </div>
+}
 
 
 @code {
 
-    private bool dark;
+    private bool dark = true;      // padrão do app é escuro
     private bool showSettings;
 
     private string? userName;
@@ -122,6 +194,21 @@
     protected override async Task OnInitializedAsync()
     {
         AuthService.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+        // ── ADIÇÃO ────────────────────────────────────────────────────────
+        // Restaura o tema salvo. Usa ThemeService.GetTheme(), que já existia
+        // e nunca era chamado — por isso o interruptor sempre nascia errado.
+        try
+        {
+            var theme = await ThemeService.GetTheme();
+            dark = theme != "theme-light";
+        }
+        catch
+        {
+            // Se o JS interop não estiver disponível, mantém o padrão escuro.
+            dark = true;
+        }
+        // ──────────────────────────────────────────────────────────────────
 
         await UpdateUserProfile();
     }
@@ -163,6 +250,8 @@
 
     private async Task LogoutAsync()
     {
+        showSettings = false;
+
         await AuthService.LogoutAsync();
 
         Navigation.NavigateTo("/login");

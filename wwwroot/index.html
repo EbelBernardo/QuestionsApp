@@ -3,21 +3,40 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>QuestionsApp</title>
     <base href="/" />
+    <meta name="theme-color" content="#16120E" />
     <link rel="preload" id="webassembly" />
-    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="css/theme.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css" />
+
+    <!-- Bootstrap REMOVIDO. O design system é próprio (theme.css + app.css). -->
+    <link href="css/theme.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
     <link href="Questions.styles.css" rel="stylesheet" />
-    <!-- If you add any scoped CSS files, uncomment the following to load them
-    <link href="QuestionsApp.styles.css" rel="stylesheet" /> -->
+
+    <!--
+      ANTI-FLASH DE TEMA
+      Aplica a classe de tema ANTES do primeiro paint. Sem isto a página
+      pisca no tema errado enquanto o WebAssembly carrega.
+      Mantém o mesmo contrato do theme.js (classe no <body>).
+    -->
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem("theme"); } catch (e) { }
+            if (t !== "theme-light" && t !== "theme-dark") t = "theme-dark";
+            document.documentElement.setAttribute("data-boot-theme", t);
+        })();
+    </script>
+
     <script type="importmap"></script>
 </head>
 
 <body>
+    <!--
+      O theme.js roda logo abaixo e move a classe para o <body>.
+      A classe inicial aqui evita o flash antes do script.
+    -->
     <div id="app">
         <svg class="loading-progress">
             <circle r="40%" cx="50%" cy="50%" />
@@ -26,11 +45,52 @@
         <div class="loading-progress-text"></div>
     </div>
 
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="." class="reload">Reload</a>
+    <div id="blazor-error-ui" data-nosnippet>
+        Ocorreu um erro inesperado.
+        <a href="." class="reload">Recarregar</a>
         <span class="dismiss">🗙</span>
     </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         SPRITE DE ÍCONES
+         Substitui o bootstrap-icons (que vinha de CDN). Ícones inline,
+         sem dependência externa, herdam a cor do texto via currentColor.
+
+         Uso no Razor:
+             <svg class="qa-ico"><use href="#i-plus"></use></svg>
+
+         Para adicionar um ícone novo: cole um <symbol id="i-nome"> aqui.
+         ══════════════════════════════════════════════════════════════════ -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="15" rx="3" /><path d="M8 3h10a3 3 0 0 1 3 3v10" /></symbol>
+        <symbol id="i-question" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+        <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></symbol>
+        <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M4 4l16 16" /><path d="M9.9 5.2A9.7 9.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.7A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.2-.9" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></symbol>
+        <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L20 8a2.8 2.8 0 0 0-4-4L4 16z" /></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 7V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" /></symbol>
+        <symbol id="i-dots" viewBox="0 0 24 24" class="qa-ico--fill"><circle cx="12" cy="5" r="1.9" /><circle cx="12" cy="12" r="1.9" /><circle cx="12" cy="19" r="1.9" /></symbol>
+        <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 18 9 12l6-6" /></symbol>
+        <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+        <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+        <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6" /></symbol>
+        <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.1 14.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.7-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.3a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.4 1z" /></symbol>
+        <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></symbol>
+        <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></symbol>
+        <symbol id="i-flip" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-8.5-6M3 12a9 9 0 0 1 9-9 9 9 0 0 1 8.5 6" /><path d="M20.5 3v6h-6M3.5 21v-6h6" /></symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></symbol>
+        <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z" /></symbol>
+        <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22z" /></symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17.2v.1" /></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 7.8v.1" /></symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z" /></symbol>
+    </svg>
+
     <script src="theme.js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script src="js/supabaseSession.js"></script>
