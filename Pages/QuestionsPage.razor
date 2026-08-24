@@ -598,45 +598,26 @@
         QuestionStatus.Correct => "qa-chip--success",
         _ => "qa-chip--danger"
     };
-
-
-    // ══════════════════════════════════════════════════════════════════════
-    // ██  GANCHOS DE DADOS — IMPLEMENTE AQUI  ██████████████████████████████
-    //
-    // Agregados da matéria. Ficam null até você implementar; a interface
-    // mostra "—" nesse meio-tempo, sem inventar número.
-    //
-    // Todos podem ser resolvidos SÓ com a lista `_questions`, que já está
-    // carregada — sem tocar em Services, Models ou Supabase.
-    // ══════════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// TODO(dados): taxa de acerto da matéria (0–100).
-    ///     var answered = _questions.Sum(q => q.TimesAnswered);
-    ///     if (answered == 0) return null;
-    ///     var correct = _questions.Sum(q => q.CorrectAnswers);
-    ///     return (int)Math.Round(correct * 100.0 / answered);
-    /// </summary>
+    
     private int? GetMastery()
     {
-        return null;
+        var totalTimesAnwered = _questions.Sum(q => q.TimesAnswered);
+        
+        if (totalTimesAnwered == 0)
+            return 0;
+
+        var totalCorrectAnswers = _questions.Sum(q => q.CorrectAnswers);
+        
+        return (totalCorrectAnswers * 100) / totalTimesAnwered;
     }
 
-    /// <summary>
-    /// TODO(dados): quantas perguntas foram erradas na última resposta.
-    ///     return _questions.Count(q => q.TimesAnswered > 0 && !q.LastAnswerCorrect);
-    /// </summary>
     private int? GetWrongCount()
     {
-        return null;
+        return _questions.Count(q => q.TimesAnswered > 0 && !q.LastAnswerCorrect);
     }
 
-    /// <summary>
-    /// TODO(dados): quantas perguntas nunca foram respondidas.
-    ///     return _questions.Count(q => q.TimesAnswered == 0);
-    /// </summary>
     private int? GetNeverAnsweredCount()
     {
-        return null;
+        return _questions.Count(q => q.TimesAnswered == 0);
     }
 }

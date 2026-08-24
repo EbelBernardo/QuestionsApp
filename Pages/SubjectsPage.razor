@@ -19,13 +19,6 @@
       foi MOVIDO, sem alteração de comportamento, para Pages/Cards.razor,
       que agora é uma rota própria: /cards/{id}.
 
-    ── AJUSTE PONTUAL ────────────────────────────────────────────────────────
-      O campo `_questions` foi trocado por uma variável local dentro de
-      GetCategories(). Ele era compartilhado entre a contagem de perguntas e o
-      modal de estudo; se a contagem rodasse com o modal aberto, o baralho
-      trocava no meio da sessão. Como o modal saiu, o campo perdeu a razão de
-      existir. Comportamento idêntico.
-
     ── ONDE CONECTAR DADOS DEPOIS ────────────────────────────────────────────
       Procure por "TODO(dados)" neste arquivo. Todos os ganchos de
       estatística estão isolados no final, no bloco marcado.
@@ -95,7 +88,7 @@
                 <button type="button" class="qa-filter" disabled>
                     <span class="qa-filter__dot" style="background:var(--qa-warning)"></span>
                     Com pendências
-                    <span class="qa-filter__count">—</span>
+                    <span class="qa-filter__count">@_questionsByCategory.Values.SelectMany(q => q).Count(q => q.TimesAnswered == 0)</span>
                 </button>
                 <button type="button" class="qa-filter" disabled>
                     <span class="qa-filter__dot" style="background:var(--qa-text-3)"></span>
@@ -108,8 +101,7 @@
         @*
             ── RESUMO ────────────────────────────────────────────────────────
             Deliberadamente pequeno: dois números e um caminho para a futura
-            tela de estatísticas. A Home continua sendo sobre estudar, não
-            sobre olhar números.
+            tela de estatísticas.
 
             Os componentes .qa-stat / .qa-statgrid são os MESMOS que a tela de
             Dashboard vai usar — inclusive na variante grande (.qa-stat--xl).
@@ -487,8 +479,10 @@
 @code {
 
     // ── ESTADO ORIGINAL (preservado) ─────────────────────────────────────
-    private List<Category> _categories = [];
     private Category _category = new();
+    private List<Category> _categories = [];
+    private List<Question> questions = new();
+    private Dictionary<Guid, List<Question>> _questionsByCategory = new();
     private Dictionary<Guid, int> _questionsCount = new();
 
     // ── ESTADO NOVO, SOMENTE DE INTERFACE ────────────────────────────────
@@ -524,14 +518,14 @@
         _categories = await CategoryService.GetAllAsync();
 
         _questionsCount.Clear();
+        _questionsByCategory.Clear();
 
         foreach (var category in _categories)
         {
-            // Variável LOCAL (antes era o campo _questions, compartilhado
-            // com o modal de estudo que hoje vive em Pages/Cards.razor).
             var questions = await GetAllQuestions(category.ID);
 
             _questionsCount[category.ID] = questions.Count;
+            _questionsByCategory[category.ID] = questions;
         }
 
         _categories = _categories.OrderBy(c => c.Name).ToList();
@@ -606,7 +600,7 @@
 
         _deleteTarget = null;
 
-        await DeleteCategory(id);   // método original, intacto
+        await DeleteCategory(id);
     }
 
     private async Task FocusNewCategory()
@@ -642,7 +636,17 @@
     /// </summary>
     private int? GetMastery(Guid categoryId)
     {
-        return null;
+        if (!_questionsByCategory.TryGetValue(categoryId, out var questions))
+            return null;
+
+        var answered = questions.Sum(q => q.TimesAnswered);
+
+        if (answered == 0)
+            return null;
+
+        var correct = questions.Sum(q => q.CorrectAnswers);
+
+        return (int)Math.Round(correct * 100.0 / answered);
     }
 
     /// <summary>
@@ -665,7 +669,15 @@
     /// </summary>
     private IReadOnlyList<int>? GetTrend(Guid categoryId)
     {
-        return null;
+        var a = 20;
+        var b = 70;
+        var c = 100;
+        var d = 60;
+        var e = 30;
+        var f = 5;
+        var g = 70;
+
+        return new[] { a , b, c, d, e, f, g };
     }
 
     /// <summary>

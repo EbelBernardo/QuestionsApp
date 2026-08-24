@@ -350,7 +350,7 @@
         // TODO(dados): descomente para alimentar "revisada há X dias" nas
         // telas de Matérias. A coluna LastReview já existe no modelo e no
         // banco, só nunca foi preenchida.
-        // question.LastReview = DateTime.UtcNow;
+        question.LastReview = DateTime.UtcNow;
 
         await UpdateQuestion(question);
 
@@ -366,8 +366,7 @@
         question.LastAnswerCorrect = false;
         question.TimesAnswered++;
 
-        // TODO(dados): idem ao método acima.
-        // question.LastReview = DateTime.UtcNow;
+        question.LastReview = DateTime.UtcNow;
 
         await UpdateQuestion(question);
 
