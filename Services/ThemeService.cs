@@ -1,6 +1,6 @@
 ﻿using Microsoft.JSInterop;
 
-namespace Perguntas.Client.Services;
+namespace Questions.Services;
 
 public class ThemeService
 {

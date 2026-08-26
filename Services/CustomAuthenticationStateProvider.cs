@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 
-namespace Perguntas.Client.Services;
+namespace Questions.Services;
 
 public class CustomAuthenticationStateProvider
     : AuthenticationStateProvider

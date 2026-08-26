@@ -1,7 +1,7 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace Perguntas.Client.Models
+namespace Questions.Models
 {
     [Table("questions")]
     public class Question : BaseModel
@@ -23,8 +23,8 @@ namespace Perguntas.Client.Models
         public DateTime CreatedAt { get; set; }
         [Column("last_review")]
         public DateTime? LastReview { get; set; }
-        [Column("category_id")]
-        public Guid CategoryID { get; set; }
+        [Column("subject_id")]
+        public Guid SubjectID { get; set; }
         [Column("user_id")]
         public Guid UserId { get; set; }
     }

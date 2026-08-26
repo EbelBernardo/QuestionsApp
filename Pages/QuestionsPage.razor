@@ -7,7 +7,7 @@
 
     ── LÓGICA PRESERVADA (mesmos nomes, mesmos corpos) ───────────────────────
       · [Parameter] Id
-      · OnAfterRenderAsync(firstRender) → GetQuestions() + CategoryService.GetAsync(Id)
+      · OnAfterRenderAsync(firstRender) → GetQuestions() + SubjectService.GetAsync(Id)
       · GetQuestions()   → QuestionService.GetAllAsync(Id)
       · CreateQuestion() → QuestionService.CreateAsync(_question)
       · DeleteQuestion() → QuestionService.DeleteAsync(id)
@@ -28,16 +28,16 @@
 *@
 @page "/questions/{Id:guid}"
 @attribute [Authorize]
-@using Perguntas.Client.Models
-@using Perguntas.Client.Services
+@using Questions.Models
+@using Questions.Services
 @using Questions.Components
 @using Microsoft.AspNetCore.Authorization
 
 @inject QuestionService QuestionService
-@inject CategoryService CategoryService
+@inject SubjectService SubjectService
 @inject NavigationManager Navigation
 
-<PageTitle>@(string.IsNullOrWhiteSpace(_category.Name) ? "Perguntas" : _category.Name) · QuestionsApp</PageTitle>
+<PageTitle>@(string.IsNullOrWhiteSpace(_subject.Name) ? "Perguntas" : _subject.Name) · QuestionsApp</PageTitle>
 
 <div class="qa-page" style="@UiHelpers.SubjectStyle(Id)">
 
@@ -49,10 +49,10 @@
 
             <div class="qa-row" style="margin-top:10px">
                 <div class="qa-mark qa-mark--lg" aria-hidden="true">
-                    @UiHelpers.Initials(_category.Name)
+                    @UiHelpers.Initials(_subject.Name)
                 </div>
                 <h2 class="qa-context__title" style="margin:0;font-size:19px">
-                    @_category.Name
+                    @_subject.Name
                 </h2>
             </div>
 
@@ -151,7 +151,7 @@
             <a class="qa-btn qa-btn--icon" href="" aria-label="Voltar para Matérias">
                 <svg class="qa-ico" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
             </a>
-            <h2>@_category.Name</h2>
+            <h2>@_subject.Name</h2>
         </div>
 
         <div class="qa-sheet">
@@ -162,7 +162,7 @@
                     <nav class="qa-crumb" aria-label="Trilha">
                         <a href="">Matérias</a>
                         <span aria-hidden="true">/</span>
-                        <span class="qa-crumb__current">@_category.Name</span>
+                        <span class="qa-crumb__current">@_subject.Name</span>
                     </nav>
 
                     <h1 class="qa-pagehead__title">Perguntas</h1>
@@ -438,7 +438,7 @@
     // ── ESTADO ORIGINAL (preservado) ─────────────────────────────────────
     private List<Question> _questions = [];
     private Question _question = new();
-    private Category _category = new();
+    private Subject _subject = new();
 
     private bool showEditModal;
     private Question? editingQuestion;
@@ -460,7 +460,7 @@
 
         await GetQuestions();
 
-        _category = await CategoryService.GetAsync(Id) ?? new();
+        _subject = await SubjectService.GetAsync(Id) ?? new();
 
         _loading = false;
 
@@ -481,7 +481,7 @@
         if (string.IsNullOrWhiteSpace(_question.Statement))
             return;
 
-        _question.CategoryID = Id;
+        _question.SubjectID = Id;
         _question.CreatedAt = DateTime.UtcNow;
 
         await QuestionService.CreateAsync(_question);
@@ -505,7 +505,7 @@
             ID = question.ID,
             Statement = question.Statement,
             Answer = question.Answer,
-            CategoryID = question.CategoryID,
+            SubjectID = question.SubjectID,
             CreatedAt = question.CreatedAt
         };
 

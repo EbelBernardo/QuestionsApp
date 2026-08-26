@@ -2,7 +2,7 @@ using Microsoft.JSInterop;
 using Supabase.Gotrue;
 using Supabase.Gotrue.Interfaces;
 
-namespace Perguntas.Client.Services;
+namespace Questions.Services;
 
 public class SupabaseSessionHandler : IGotrueSessionPersistence<Session>
 {

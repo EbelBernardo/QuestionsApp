@@ -30,16 +30,16 @@
 @page "/cards/{Id:guid}"
 @layout FocusLayout
 @attribute [Authorize]
-@using Perguntas.Client.Models
-@using Perguntas.Client.Services
+@using Questions.Models
+@using Questions.Services
 @using Questions.Components
 @using Microsoft.AspNetCore.Authorization
 
 @inject QuestionService QuestionService
-@inject CategoryService CategoryService
+@inject SubjectService SubjectService
 @inject NavigationManager Navigation
 
-<PageTitle>Estudando @_category.Name · QuestionsApp</PageTitle>
+<PageTitle>Estudando @_subject.Name · QuestionsApp</PageTitle>
 
 @*
     tabindex="0" torna o container focável para que os atalhos de teclado
@@ -60,11 +60,11 @@
         </button>
 
         <div class="qa-mark qa-mark--sm" aria-hidden="true">
-            @UiHelpers.Initials(_category.Name)
+            @UiHelpers.Initials(_subject.Name)
         </div>
 
         <div>
-            <div class="qa-focus__title">@_category.Name</div>
+            <div class="qa-focus__title">@_subject.Name</div>
             <div class="qa-focus__count">
                 @if (_loading)
                 {
@@ -262,7 +262,7 @@
 
     // ── ESTADO VINDO DO MODAL ANTIGO (mesmos nomes) ──────────────────────
     private List<Question> _questions = [];
-    private Category _category = new();
+    private Subject _subject = new();
 
     private bool showResult;
     private int currentQuestionIndex = 0;
@@ -319,7 +319,7 @@
 
         _questions = await QuestionService.GetAllAsync(Id);
 
-        _category = await CategoryService.GetAsync(Id) ?? new();
+        _subject = await SubjectService.GetAsync(Id) ?? new();
 
         currentQuestionIndex = 0;
         correctAnswers = 0;

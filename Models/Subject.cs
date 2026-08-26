@@ -1,10 +1,10 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace Perguntas.Client.Models
+namespace Questions.Models
 {
-    [Table("categories")]
-    public class Category : BaseModel
+    [Table("subjects")]
+    public class Subject : BaseModel
     {
         [PrimaryKey("id", false)]
         [Column("id")]

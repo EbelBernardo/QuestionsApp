@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Perguntas.Client.Services;
+using Questions.Services;
 using Questions;
 using Questions.Config;
 using Supabase;
@@ -17,7 +17,7 @@ builder.Services.AddScoped(sp =>
         BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
     });
 
-builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<SubjectService>();
 builder.Services.AddScoped<QuestionService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<SupabaseService>();

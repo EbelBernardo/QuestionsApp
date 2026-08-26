@@ -1,6 +1,6 @@
-﻿using Perguntas.Client.Models;
+﻿using Questions.Models;
 
-namespace Perguntas.Client.Services
+namespace Questions.Services
 {
     public class QuestionService
     {
@@ -13,13 +13,13 @@ namespace Perguntas.Client.Services
             _authService = authService;
         }
 
-        public async Task<List<Question>> GetAllAsync(Guid categoryId)
+        public async Task<List<Question>> GetAllAsync(Guid subjectId)
         {
             return await _authService.ExecuteAsync(async () =>
             {
                 var response = await _supabase
                     .From<Question>()
-                    .Where(q => q.CategoryID == categoryId)
+                    .Where(q => q.SubjectID == subjectId)
                     .Get();
 
                 return response.Models;

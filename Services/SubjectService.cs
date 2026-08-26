@@ -1,37 +1,37 @@
 ﻿
-using Perguntas.Client.Models;
+using Questions.Models;
 
-namespace Perguntas.Client.Services
+namespace Questions.Services
 {
-    public class CategoryService
+    public class SubjectService
     {
         private readonly Supabase.Client _supabase;
         private readonly AuthService _authService;
 
-        public CategoryService(Supabase.Client supabase, AuthService authService)
+        public SubjectService(Supabase.Client supabase, AuthService authService)
         {
             _supabase = supabase;
             _authService = authService;
         }
 
-        public async Task<List<Category>> GetAllAsync()
+        public async Task<List<Subject>> GetAllAsync()
         {
             return await _authService.ExecuteAsync(async () =>
             {
                 var response = await _supabase
-                    .From<Category>()
+                    .From<Subject>()
                     .Get();
 
                 return response.Models;
             }) ?? [];
         }
 
-        public async Task<Category?> GetAsync(Guid id)
+        public async Task<Subject?> GetAsync(Guid id)
         {
             return await _authService.ExecuteAsync(async () =>
             {
                 var response = await _supabase
-                    .From<Category>()
+                    .From<Subject>()
                     .Where(c => c.ID == id)
                     .Single();
 
@@ -39,32 +39,32 @@ namespace Perguntas.Client.Services
             });
         }
 
-        public async Task CreateAsync(Category category)
+        public async Task CreateAsync(Subject subject)
         {
             if (!_authService.IsAuthenticated)
                 throw new InvalidOperationException("Usuário não autenticado.");
 
-            category.ID = Guid.NewGuid();
-            category.UserId = Guid.Parse(_authService.CurrentUserId!);
+            subject.ID = Guid.NewGuid();
+            subject.UserId = Guid.Parse(_authService.CurrentUserId!);
 
             await _authService.ExecuteAsync(async () =>
             {
                 await _supabase
-                    .From<Category>()
-                    .Insert(category);
+                    .From<Subject>()
+                    .Insert(subject);
 
                 return true;
             });
         }
 
-        public async Task UpdateAsync(Category category)
+        public async Task UpdateAsync(Subject subject)
         {
             await _authService.ExecuteAsync(async () =>
             {
                 await _supabase
-                    .From<Category>()
-                    .Where(c => c.ID == category.ID)
-                    .Update(category);
+                    .From<Subject>()
+                    .Where(c => c.ID == subject.ID)
+                    .Update(subject);
 
                 return true;
             });
@@ -75,7 +75,7 @@ namespace Perguntas.Client.Services
             await _authService.ExecuteAsync(async () =>
             {
                 await _supabase
-                    .From<Category>()
+                    .From<Subject>()
                     .Where(c => c.ID == id)
                     .Delete();
 

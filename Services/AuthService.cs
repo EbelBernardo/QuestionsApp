@@ -2,7 +2,7 @@
 using Supabase;
 using Supabase.Gotrue;
 
-namespace Perguntas.Client.Services;
+namespace Questions.Services;
 
 public class AuthService
 {

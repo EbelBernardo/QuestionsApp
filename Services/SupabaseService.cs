@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Json;
 
-namespace Perguntas.Client.Services
+namespace Questions.Services
 {
     public class SupabaseService
     {

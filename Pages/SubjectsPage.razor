@@ -5,10 +5,10 @@
     Rota INALTERADA: "/"
 
     ── LÓGICA PRESERVADA (mesmos nomes, mesmos corpos) ───────────────────────
-      · OnAfterRenderAsync(firstRender) → GetCategories()
-      · GetCategories()   → CategoryService.GetAllAsync() + contagem por matéria
-      · CreateCategory()  → CategoryService.CreateAsync(_category)
-      · DeleteCategory()  → CategoryService.DeleteAsync(id)
+      · OnAfterRenderAsync(firstRender) → GetSubjects()
+      · GetSubjects()   → SubjectService.GetAllAsync() + contagem por matéria
+      · CreateSubject()  → SubjectService.CreateAsync(_subject)
+      · DeleteSubject()  → SubjectService.DeleteAsync(id)
       · Questions(id)     → Navigation.NavigateTo($"/questions/{id}")
       · GetAllQuestions() → QuestionService.GetAllAsync(id)
 
@@ -26,12 +26,12 @@
 *@
 @page "/"
 @attribute [Authorize]
-@using Perguntas.Client.Services
-@using Perguntas.Client.Models
+@using Questions.Services
+@using Questions.Models
 @using Questions.Components
 @using Microsoft.AspNetCore.Authorization
 
-@inject CategoryService CategoryService
+@inject SubjectService SubjectService
 @inject QuestionService QuestionService
 @inject NavigationManager Navigation
 
@@ -56,10 +56,10 @@
             a lista que já está em memória — não precisa ir ao backend:
 
                 private string _search = string.Empty;
-                private IEnumerable<Category> FilteredCategories =>
+                private IEnumerable<Subject> FilteredSubjects =>
                     string.IsNullOrWhiteSpace(_search)
-                        ? _categories
-                        : _categories.Where(c => c.Name.Contains(
+                        ? _subjects
+                        : _subjects.Where(c => c.Name.Contains(
                               _search, StringComparison.OrdinalIgnoreCase));
 
             e trocar o @@bind-value abaixo + o foreach da grade.
@@ -83,12 +83,12 @@
                 <button type="button" class="qa-filter is-active">
                     <span class="qa-filter__dot" style="background:var(--qa-primary)"></span>
                     Todas
-                    <span class="qa-filter__count">@_categories.Count</span>
+                    <span class="qa-filter__count">@_subjects.Count</span>
                 </button>
                 <button type="button" class="qa-filter" disabled>
                     <span class="qa-filter__dot" style="background:var(--qa-warning)"></span>
                     Com pendências
-                    <span class="qa-filter__count">@_questionsByCategory.Values.SelectMany(q => q).Count(q => q.TimesAnswered == 0)</span>
+                    <span class="qa-filter__count">@_questionsBySubject.Values.SelectMany(q => q).Count(q => q.TimesAnswered == 0)</span>
                 </button>
                 <button type="button" class="qa-filter" disabled>
                     <span class="qa-filter__dot" style="background:var(--qa-text-3)"></span>
@@ -111,7 +111,7 @@
 
             <div class="qa-statgrid qa-statgrid--2" style="margin-top:10px">
                 <div class="qa-stat qa-stat--primary" style="background:none;border:0;padding:0">
-                    <span class="qa-stat__value">@_categories.Count</span>
+                    <span class="qa-stat__value">@_subjects.Count</span>
                     <span class="qa-stat__label">Matérias</span>
                 </div>
                 <div class="qa-stat qa-stat--teal" style="background:none;border:0;padding:0">
@@ -138,7 +138,7 @@
         </div>
 
         <div class="qa-context__foot">
-            <button type="button" class="qa-btn qa-btn--primary qa-btn--block" @onclick="FocusNewCategory">
+            <button type="button" class="qa-btn qa-btn--primary qa-btn--block" @onclick="FocusNewSubject">
                 <svg class="qa-ico" aria-hidden="true"><use href="#i-plus"></use></svg>
                 Nova matéria
             </button>
@@ -166,7 +166,7 @@
                         {
                             <span>Carregando sua biblioteca…</span>
                         }
-                        else if (_categories.Count == 0)
+                        else if (_subjects.Count == 0)
                         {
                             <span>Comece criando a primeira matéria.</span>
                         }
@@ -182,16 +182,16 @@
                  Virou uma faixa de UMA linha. No layout antigo era um card
                  grande no topo da página, o que dizia que a atividade
                  principal do app era cadastrar — e não é, é revisar.
-                 A lógica (EditForm + CreateCategory) é a mesma. *@
-            <EditForm Model="_category" OnValidSubmit="CreateCategory">
+                 A lógica (EditForm + CreateSubject) é a mesma. *@
+            <EditForm Model="_subject" OnValidSubmit="CreateSubject">
                 <div class="qa-plate qa-plate--inline">
 
                     <div class="qa-field">
-                        <label class="qa-label" for="qa-new-category">Criar nova matéria</label>
+                        <label class="qa-label" for="qa-new-subject">Criar nova matéria</label>
                         <InputText class="qa-input"
-                                   id="qa-new-category"
-                                   @ref="_newCategoryInput"
-                                   @bind-Value="_category.Name"
+                                   id="qa-new-subject"
+                                   @ref="_newSubjectInput"
+                                   @bind-Value="_subject.Name"
                                    placeholder="Ex.: Direito Constitucional" />
                     </div>
 
@@ -224,7 +224,7 @@
             }
 
             @* ── ESTADO: VAZIO ─────────────────────────────────────────── *@
-            else if (_categories.Count == 0)
+            else if (_subjects.Count == 0)
             {
                 <div class="qa-empty">
                     <div class="qa-empty__icon">
@@ -243,26 +243,26 @@
             {
                 <div class="qa-grid">
 
-                    @foreach (var category in _categories)
+                    @foreach (var subject in _subjects)
                     {
-                        var questionsCount = _questionsCount.GetValueOrDefault(category.ID, 0);
+                        var questionsCount = _questionsCount.GetValueOrDefault(subject.ID, 0);
                         var hasQuestions = questionsCount > 0;
 
                         // TODO(dados): ver bloco "GANCHOS DE DADOS" no final do arquivo.
-                        var mastery = GetMastery(category.ID);
-                        var trend = GetTrend(category.ID);
-                        var lastReview = GetLastReviewLabel(category.ID);
+                        var mastery = GetMastery(subject.ID);
+                        var trend = GetTrend(subject.ID);
+                        var lastReview = GetLastReviewLabel(subject.ID);
 
-                        <article class="qa-tile" style="@UiHelpers.SubjectStyle(category.ID)">
+                        <article class="qa-tile" style="@UiHelpers.SubjectStyle(subject.ID)">
 
                             <div class="qa-tile__head">
 
                                 <div class="qa-mark" aria-hidden="true">
-                                    @UiHelpers.Initials(category.Name)
+                                    @UiHelpers.Initials(subject.Name)
                                 </div>
 
                                 <div style="min-width:0">
-                                    <h3 class="qa-tile__title">@category.Name</h3>
+                                    <h3 class="qa-tile__title">@subject.Name</h3>
 
                                     <p class="qa-tile__meta">
                                         @if (!hasQuestions)
@@ -334,14 +334,14 @@
                                 {
                                     <button type="button"
                                             class="qa-btn qa-btn--primary qa-btn--sm"
-                                            @onclick="() => Study(category.ID)">
+                                            @onclick="() => Study(subject.ID)">
                                         <svg class="qa-ico" aria-hidden="true"><use href="#i-layers"></use></svg>
                                         Estudar
                                     </button>
 
                                     <button type="button"
                                             class="qa-btn qa-btn--outline qa-btn--sm"
-                                            @onclick="() => Questions(category.ID)">
+                                            @onclick="() => Questions(subject.ID)">
                                         Perguntas
                                     </button>
                                 }
@@ -361,7 +361,7 @@
 
                                     <button type="button"
                                             class="qa-btn qa-btn--outline qa-btn--sm"
-                                            @onclick="() => Questions(category.ID)">
+                                            @onclick="() => Questions(subject.ID)">
                                         <svg class="qa-ico" aria-hidden="true"><use href="#i-plus"></use></svg>
                                         Adicionar pergunta
                                     </button>
@@ -371,27 +371,27 @@
 
                                     <button type="button"
                                             class="qa-btn qa-btn--icon"
-                                            @onclick="() => ToggleMenu(category.ID)"
+                                            @onclick="() => ToggleMenu(subject.ID)"
                                             aria-haspopup="menu"
-                                            aria-expanded="@(_menuOpenFor == category.ID ? "true" : "false")"
-                                            aria-label="@($"Mais ações de {category.Name}")">
+                                            aria-expanded="@(_menuOpenFor == subject.ID ? "true" : "false")"
+                                            aria-label="@($"Mais ações de {subject.Name}")">
                                         <svg class="qa-ico" aria-hidden="true"><use href="#i-dots"></use></svg>
                                     </button>
 
-                                    @if (_menuOpenFor == category.ID)
+                                    @if (_menuOpenFor == subject.ID)
                                     {
                                         <div class="qa-menu qa-menu--up" role="menu">
 
                                             <button type="button"
                                                     class="qa-menu__item"
                                                     role="menuitem"
-                                                    @onclick="() => Questions(category.ID)">
+                                                    @onclick="() => Questions(subject.ID)">
                                                 <svg class="qa-ico" aria-hidden="true"><use href="#i-question"></use></svg>
                                                 Ver perguntas
                                             </button>
 
                                             @* TODO(futuro): renomear matéria.
-                                               O serviço já existe: CategoryService.UpdateAsync(category).
+                                               O serviço já existe: SubjectService.UpdateAsync(subject).
                                                Basta abrir um diálogo com um input e chamar o método. *@
 
                                             <div class="qa-menu__sep"></div>
@@ -399,7 +399,7 @@
                                             <button type="button"
                                                     class="qa-menu__item qa-menu__item--danger"
                                                     role="menuitem"
-                                                    @onclick="() => AskDelete(category)">
+                                                    @onclick="() => AskDelete(subject)">
                                                 <svg class="qa-ico" aria-hidden="true"><use href="#i-trash"></use></svg>
                                                 Excluir matéria
                                             </button>
@@ -479,17 +479,17 @@
 @code {
 
     // ── ESTADO ORIGINAL (preservado) ─────────────────────────────────────
-    private Category _category = new();
-    private List<Category> _categories = [];
+    private Subject _subject = new();
+    private List<Subject> _subjects = [];
     private List<Question> questions = new();
-    private Dictionary<Guid, List<Question>> _questionsByCategory = new();
+    private Dictionary<Guid, List<Question>> _questionsBySubject = new();
     private Dictionary<Guid, int> _questionsCount = new();
 
     // ── ESTADO NOVO, SOMENTE DE INTERFACE ────────────────────────────────
     private bool _loading = true;               // controla skeleton
     private Guid? _menuOpenFor;                 // menu ⋯ aberto
-    private Category? _deleteTarget;            // confirmação de exclusão
-    private InputText? _newCategoryInput;       // foco no campo de criação
+    private Subject? _deleteTarget;            // confirmação de exclusão
+    private InputText? _newSubjectInput;       // foco no campo de criação
 
 
     // ══════════════════════════════════════════════════════════════════════
@@ -498,7 +498,7 @@
     // NOTA: mantive OnAfterRenderAsync como estava para não mexer no que já
     // funciona. Se um dia quiser eliminar o "pisca" inicial, mova para:
     //     protected override async Task OnInitializedAsync()
-    //     { await GetCategories(); }
+    //     { await GetSubjects(); }
     // e apague este método. O resto do arquivo funciona igual.
     // ══════════════════════════════════════════════════════════════════════
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -506,52 +506,52 @@
         if (!firstRender)
             return;
 
-        await GetCategories();
+        await GetSubjects();
 
         StateHasChanged();
     }
 
-    private async Task<List<Category>> GetCategories()
+    private async Task<List<Subject>> GetSubjects()
     {
         _loading = true;
 
-        _categories = await CategoryService.GetAllAsync();
+        _subjects = await SubjectService.GetAllAsync();
 
         _questionsCount.Clear();
-        _questionsByCategory.Clear();
+        _questionsBySubject.Clear();
 
-        foreach (var category in _categories)
+        foreach (var subject in _subjects)
         {
-            var questions = await GetAllQuestions(category.ID);
+            var questions = await GetAllQuestions(subject.ID);
 
-            _questionsCount[category.ID] = questions.Count;
-            _questionsByCategory[category.ID] = questions;
+            _questionsCount[subject.ID] = questions.Count;
+            _questionsBySubject[subject.ID] = questions;
         }
 
-        _categories = _categories.OrderBy(c => c.Name).ToList();
+        _subjects = _subjects.OrderBy(c => c.Name).ToList();
 
         _loading = false;
 
-        return _categories;
+        return _subjects;
     }
 
-    private async Task CreateCategory()
+    private async Task CreateSubject()
     {
-        if (string.IsNullOrWhiteSpace(_category.Name))
+        if (string.IsNullOrWhiteSpace(_subject.Name))
             return;
 
-        await CategoryService.CreateAsync(_category);
+        await SubjectService.CreateAsync(_subject);
 
-        _category = new();
+        _subject = new();
 
-        await GetCategories();
+        await GetSubjects();
     }
 
-    private async Task DeleteCategory(Guid id)
+    private async Task DeleteSubject(Guid id)
     {
-        await CategoryService.DeleteAsync(id);
+        await SubjectService.DeleteAsync(id);
 
-        await GetCategories();
+        await GetSubjects();
     }
 
     private async Task<List<Question>> GetAllQuestions(Guid id)
@@ -580,10 +580,10 @@
         _menuOpenFor = _menuOpenFor == id ? null : id;
     }
 
-    private void AskDelete(Category category)
+    private void AskDelete(Subject subject)
     {
         _menuOpenFor = null;
-        _deleteTarget = category;
+        _deleteTarget = subject;
     }
 
     private void CancelDelete()
@@ -600,12 +600,12 @@
 
         _deleteTarget = null;
 
-        await DeleteCategory(id);
+        await DeleteSubject(id);
     }
 
-    private async Task FocusNewCategory()
+    private async Task FocusNewSubject()
     {
-        if (_newCategoryInput?.Element is { } element)
+        if (_newSubjectInput?.Element is { } element)
             await element.FocusAsync();
     }
 
@@ -618,7 +618,7 @@
     // barras apagadas) — nada é inventado na tela.
     //
     // Nenhum deles precisa de mudança em Services, Models ou Supabase: as
-    // perguntas já são carregadas em GetCategories(). Se você quiser, basta
+    // perguntas já são carregadas em GetSubjects(). Se você quiser, basta
     // guardar a lista por matéria num dicionário lá e ler aqui.
     // ══════════════════════════════════════════════════════════════════════
 
@@ -634,9 +634,9 @@
     /// Retorne null quando não houver nenhuma resposta registrada — a UI já
     /// trata esse caso mostrando "—".
     /// </summary>
-    private int? GetMastery(Guid categoryId)
+    private int? GetMastery(Guid subjectId)
     {
-        if (!_questionsByCategory.TryGetValue(categoryId, out var questions))
+        if (!_questionsBySubject.TryGetValue(subjectId, out var questions))
             return null;
 
         var answered = questions.Sum(q => q.TimesAnswered);
@@ -667,7 +667,7 @@
     ///
     /// Retorne null para manter as barras neutras.
     /// </summary>
-    private IReadOnlyList<int>? GetTrend(Guid categoryId)
+    private IReadOnlyList<int>? GetTrend(Guid subjectId)
     {
         var a = 20;
         var b = 70;
@@ -700,7 +700,7 @@
     ///
     /// Retorne null para simplesmente não mostrar a informação.
     /// </summary>
-    private string? GetLastReviewLabel(Guid categoryId)
+    private string? GetLastReviewLabel(Guid subjectId)
     {
         return null;
     }
