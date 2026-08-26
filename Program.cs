@@ -19,8 +19,9 @@ builder.Services.AddScoped(sp =>
 
 builder.Services.AddScoped<SubjectService>();
 builder.Services.AddScoped<QuestionService>();
+builder.Services.AddScoped<TopicService>();
+builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<ThemeService>();
-builder.Services.AddScoped<SupabaseService>();
 builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddAuthorizationCore();

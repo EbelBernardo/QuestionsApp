@@ -1,70 +1,74 @@
-﻿
-using Questions.Models;
+﻿using Questions.Models;
+using static Supabase.Postgrest.Constants;
 
 namespace Questions.Services
 {
-    public class SubjectService
+    public class TopicService
     {
         private readonly Supabase.Client _supabase;
         private readonly AuthService _authService;
 
-        public SubjectService(Supabase.Client supabase, AuthService authService)
+        public TopicService(Supabase.Client supabase, AuthService authService)
         {
             _supabase = supabase;
             _authService = authService;
         }
 
-        public async Task<List<Subject>> GetAllAsync()
+        public async Task<List<Topic>> GetAllAsync(Guid subjectId)
         {
             return await _authService.ExecuteAsync(async () =>
             {
                 var response = await _supabase
-                    .From<Subject>()
+                    .From<Topic>()
+                    .Where(t => t.SubjectID == subjectId)
+                    .Order(t => t.Position, Ordering.Ascending)
+                    .Order(t => t.Name, Ordering.Ascending)
                     .Get();
 
                 return response.Models;
+
             }) ?? [];
         }
 
-        public async Task<Subject?> GetAsync(Guid id)
+        public async Task<Topic?> GetAsync(Guid id)
         {
             return await _authService.ExecuteAsync(async () =>
             {
                 var response = await _supabase
-                    .From<Subject>()
-                    .Where(s => s.ID == id)
+                    .From<Topic>()
+                    .Where(t => t.ID == id)
                     .Single();
 
                 return response;
             });
         }
 
-        public async Task CreateAsync(Subject subject)
+        public async Task CreateAsync(Topic topic)
         {
-            if (!_authService.IsAuthenticated)
+            if(!_authService.IsAuthenticated)
                 throw new InvalidOperationException("Usuário não autenticado.");
 
-            subject.ID = Guid.NewGuid();
-            subject.UserId = Guid.Parse(_authService.CurrentUserId!);
+            topic.ID = Guid.NewGuid();
+            topic.UserId = Guid.Parse(_authService.CurrentUserId!);
 
             await _authService.ExecuteAsync(async () =>
             {
                 await _supabase
-                    .From<Subject>()
-                    .Insert(subject);
+                    .From<Topic>()
+                    .Insert(topic);
 
                 return true;
             });
         }
 
-        public async Task UpdateAsync(Subject subject)
+        public async Task UpdateAsync(Topic topic)
         {
             await _authService.ExecuteAsync(async () =>
             {
                 await _supabase
-                    .From<Subject>()
-                    .Where(s => s.ID == subject.ID)
-                    .Update(subject);
+                    .From<Topic>()
+                    .Where(t => t.ID == topic.ID)
+                    .Update(topic);
 
                 return true;
             });
@@ -75,8 +79,8 @@ namespace Questions.Services
             await _authService.ExecuteAsync(async () =>
             {
                 await _supabase
-                    .From<Subject>()
-                    .Where(s => s.ID == id)
+                    .From<Topic>()
+                    .Where(t => t.ID == id)
                     .Delete();
 
                 return true;

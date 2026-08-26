@@ -25,6 +25,8 @@ namespace Questions.Models
         public DateTime? LastReview { get; set; }
         [Column("subject_id")]
         public Guid SubjectID { get; set; }
+        [Column("topic_id")]
+        public Guid? TopicID { get; set; }
         [Column("user_id")]
         public Guid UserId { get; set; }
     }
