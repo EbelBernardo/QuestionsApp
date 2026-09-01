@@ -33,6 +33,7 @@
 
 @inject SubjectService SubjectService
 @inject QuestionService QuestionService
+@inject ReviewService ReviewService
 @inject NavigationManager Navigation
 
 <PageTitle>Matérias · QuestionsApp</PageTitle>
@@ -482,6 +483,7 @@
     private Subject _subject = new();
     private List<Subject> _subjects = [];
     private List<Question> questions = new();
+    private List<Review> reviews = new();
     private Dictionary<Guid, List<Question>> _questionsBySubject = new();
     private Dictionary<Guid, int> _questionsCount = new();
 
@@ -516,6 +518,8 @@
         _loading = true;
 
         _subjects = await SubjectService.GetAllAsync();
+        reviews = await ReviewService.GetSinceAsync(DateTime.UtcNow.Date.AddDays(-7));
+
 
         _questionsCount.Clear();
         _questionsBySubject.Clear();
@@ -667,17 +671,35 @@
     ///
     /// Retorne null para manter as barras neutras.
     /// </summary>
+    // Pages/SubjectsPage.razor — substitui o corpo de GetTrend
+    // (anterior: /// Retorne null para manter as barras neutras. */)
+
     private IReadOnlyList<int>? GetTrend(Guid subjectId)
     {
-        var a = 20;
-        var b = 70;
-        var c = 100;
-        var d = 60;
-        var e = 30;
-        var f = 5;
-        var g = 70;
+        var today = DateTime.Now.Date;
+        var start = today.AddDays(-6);
 
-        return new[] { a , b, c, d, e, f, g };
+        var subjectReviews = reviews
+            .Where(r => r.SubjectID == subjectId)
+            .ToList();
+
+        if (subjectReviews.Count == 0)
+            return null;
+
+        var daily = new List<int>();
+
+        for (var day = start; day <= today; day = day.AddDays(1))
+        {
+            var ofDay = subjectReviews
+                .Where(r => r.AnsweredAt.ToLocalTime().Date == day)
+                .ToList();
+
+            daily.Add(ofDay.Count == 0
+                ? 0
+                : (int)Math.Round(ofDay.Count(r => r.Correct) * 100.0 / ofDay.Count));
+        }
+
+        return daily;
     }
 
     /// <summary>
