@@ -37,6 +37,7 @@
 
 @inject QuestionService QuestionService
 @inject SubjectService SubjectService
+@inject ReviewService ReviewService
 @inject NavigationManager Navigation
 
 <PageTitle>Estudando @_subject.Name · QuestionsApp</PageTitle>
@@ -353,6 +354,7 @@
         question.LastReview = DateTime.UtcNow;
 
         await UpdateQuestion(question);
+        await CreateReview(question, true);
 
         _results[currentQuestionIndex] = true;
 
@@ -369,12 +371,23 @@
         question.LastReview = DateTime.UtcNow;
 
         await UpdateQuestion(question);
+        await CreateReview(question, false);
 
         _results[currentQuestionIndex] = false;
 
         _wrongAnswers++;
 
         NextQuestion();
+    }
+
+    private async Task CreateReview(Question question, bool correct)
+    {
+        await ReviewService.CreateAsync(new Review
+        {
+            QuestionID = question.ID,
+            SubjectID = question.SubjectID,
+            Correct = correct
+        });
     }
 
     private void NextQuestion()
