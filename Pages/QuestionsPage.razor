@@ -35,7 +35,9 @@
 
 @inject QuestionService QuestionService
 @inject SubjectService SubjectService
+@inject TopicService TopicService
 @inject NavigationManager Navigation
+
 
 <PageTitle>@(string.IsNullOrWhiteSpace(_subject.Name) ? "Perguntas" : _subject.Name) · QuestionsApp</PageTitle>
 
@@ -134,6 +136,63 @@
             </button>
         </div>
 
+        @* ── SUBMATÉRIAS ───────────────────────────────────────────────
+             Reaproveita .qa-filters, o mesmo componente dos filtros acima.
+             O botão de engrenagem abre o diálogo de gerenciamento. *@
+        <div class="qa-row qa-row--between" style="margin-top:18px">
+            <span class="qa-eyebrow">Submatérias</span>
+            <button type="button"
+                    class="qa-btn qa-btn--icon"
+                    @onclick="OpenTopics"
+                    aria-label="Gerenciar submatérias">
+                <svg class="qa-ico" aria-hidden="true"><use href="#i-gear"></use></svg>
+            </button>
+        </div>
+
+        <div class="qa-filters" style="margin-top:8px">
+
+            <button type="button"
+                    class="qa-filter @(_filterKind == TopicFilterKind.All ? "is-active" : "")"
+                    @onclick="ShowAllTopics">
+                <span class="qa-filter__dot" style="background:var(--qa-primary)"></span>
+                Todas
+                <span class="qa-filter__count">@_questions.Count</span>
+            </button>
+
+            @foreach (var topic in _topics)
+            {
+                var isActive = _filterKind == TopicFilterKind.One && _filterTopicId == topic.ID;
+                var topicCount = _questions.Count(q => q.TopicID == topic.ID);
+
+                <button type="button"
+                        class="qa-filter @(isActive ? "is-active" : "")"
+                        @onclick="() => FilterByTopic(topic.ID)">
+                    <span class="qa-filter__dot" style="background:var(--qa-subject)"></span>
+                    @topic.Name
+                    <span class="qa-filter__count">@topicCount</span>
+                </button>
+            }
+
+            @if (_topics.Count > 0 && _questions.Any(q => q.TopicID is null))
+            {
+                <button type="button"
+                        class="qa-filter @(_filterKind == TopicFilterKind.None ? "is-active" : "")"
+                        @onclick="FilterWithoutTopic">
+                    <span class="qa-filter__dot" style="background:var(--qa-text-3)"></span>
+                    Sem submatéria
+                    <span class="qa-filter__count">@_questions.Count(q => q.TopicID is null)</span>
+                </button>
+            }
+
+            @if (_topics.Count == 0)
+            {
+                <p class="qa-hint" style="margin-top:6px">
+                    Nenhuma submatéria ainda. Use a engrenagem para criar a primeira.
+                </p>
+            }
+
+        </div>
+
         <div class="qa-context__foot">
             <a class="qa-btn qa-btn--ghost qa-btn--block" href="">
                 <svg class="qa-ico" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
@@ -200,10 +259,27 @@
                             <InputTextArea class="qa-textarea"
                                            id="qa-new-answer"
                                            @bind-Value="_question.Answer"
-                                           placeholder="Ninguém será obrigado a fazer ou deixar de fazer algo senão em virtude de lei." />
+                                           placeholder="Morte celular por isquemia com preservação do contorno do tecido." />
                         </div>
 
                     </div>
+
+                    @if (_topics.Count > 0)
+                    {
+                        <div class="qa-field" style="margin-top:14px">
+                            <label class="qa-label" for="qa-new-topic">Submatéria (opcional)</label>
+                            <select class="qa-select"
+                                    id="qa-new-topic"
+                                    value="@(_question.TopicID?.ToString() ?? "")"
+                                    @onchange="OnNewTopicChanged">
+                                <option value="">Sem submatéria</option>
+                                @foreach (var topic in _topics)
+                                {
+                                    <option value="@topic.ID">@topic.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
 
                     <div class="qa-btnrow" style="margin-top:16px">
                         <button type="submit" class="qa-btn qa-btn--primary">
@@ -214,13 +290,84 @@
                             Limpar
                         </button>
                         <span class="qa-btnrow__spacer"></span>
-                        <span class="qa-hint">Perguntas curtas funcionam melhor como card.</span>
+                        <span class="qa-hint">Uma pergunta, uma resposta. Se a resposta virar lista, quebre em cards separados.</span>
                     </div>
 
                 </div>
 
             </EditForm>
 
+            @* ── SUBMATÉRIAS NO MOBILE ─────────────────────────────────────
+                 Espelho do bloco do painel lateral. Abaixo de 1180px o
+                 <aside class="qa-context"> some (app.css) e este assume:
+                 mesmos handlers, só o layout muda.
+                 Fica recolhido por padrão — o <summary> já mostra qual
+                 filtro está ativo, então fechado não esconde informação. *@
+            <details class="qa-contextinline qa-plate qa-subtopics">
+
+                <summary class="qa-collapse__head">
+                    <span class="qa-eyebrow">Submatérias</span>
+                    <span class="qa-collapse__now">@TopicFilterLabel</span>
+                    <svg class="qa-ico qa-collapse__chev" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+                </summary>
+
+                <div class="qa-collapse__body">
+
+                    @if (_topics.Count == 0)
+                    {
+                        <p class="qa-hint">Nenhuma submatéria ainda.</p>
+                    }
+
+                    <div class="qa-filters qa-filters--row" style="margin-top:10px">
+
+                        @if (_topics.Count > 0)
+                        {
+                            <button type="button"
+                                    class="qa-filter @(_filterKind == TopicFilterKind.All ? "is-active" : "")"
+                                    @onclick="ShowAllTopics">
+                                <span class="qa-filter__dot" style="background:var(--qa-primary)"></span>
+                                Todas
+                                <span class="qa-filter__count">@_questions.Count</span>
+                            </button>
+
+                            @foreach (var topic in _topics)
+                            {
+                                var isActiveM = _filterKind == TopicFilterKind.One && _filterTopicId == topic.ID;
+                                var topicCountM = _questions.Count(q => q.TopicID == topic.ID);
+
+                                <button type="button"
+                                        class="qa-filter @(isActiveM ? "is-active" : "")"
+                                        @onclick="() => FilterByTopic(topic.ID)">
+                                    <span class="qa-filter__dot" style="background:var(--qa-subject)"></span>
+                                    @topic.Name
+                                    <span class="qa-filter__count">@topicCountM</span>
+                                </button>
+                            }
+
+                            @if (_questions.Any(q => q.TopicID is null))
+                            {
+                                <button type="button"
+                                        class="qa-filter @(_filterKind == TopicFilterKind.None ? "is-active" : "")"
+                                        @onclick="FilterWithoutTopic">
+                                    <span class="qa-filter__dot" style="background:var(--qa-text-3)"></span>
+                                    Sem submatéria
+                                    <span class="qa-filter__count">@_questions.Count(q => q.TopicID is null)</span>
+                                </button>
+                            }
+                        }
+
+                        <button type="button"
+                                class="qa-filter qa-filter--action"
+                                @onclick="OpenTopics">
+                            <svg class="qa-ico" aria-hidden="true"><use href="#i-gear"></use></svg>
+                            Gerenciar
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </details>
 
             @* ── ESTADO: CARREGANDO ────────────────────────────────────── *@
             @if (_loading)
@@ -239,7 +386,7 @@
                 <p class="qa-sronly" role="status">Carregando perguntas</p>
             }
 
-            @* ── ESTADO: VAZIO ─────────────────────────────────────────── *@
+            @* ── ESTADO: VAZIO (nenhuma pergunta na matéria) ───────────── *@
             else if (_questions.Count == 0)
             {
                 <div class="qa-empty">
@@ -254,6 +401,25 @@
                 </div>
             }
 
+            @* ── ESTADO: VAZIO POR FILTRO ──────────────────────────────── *@
+            else if (!FilteredQuestions.Any())
+            {
+                <div class="qa-empty">
+                    <div class="qa-empty__icon">
+                        <svg class="qa-ico" aria-hidden="true"><use href="#i-search"></use></svg>
+                    </div>
+                    <h3 class="qa-empty__title">Nenhuma pergunta nesta submatéria</h3>
+                    <p class="qa-empty__text">
+                        A matéria tem @_questions.Count @(_questions.Count == 1 ? "pergunta" : "perguntas"),
+                        mas nenhuma está marcada aqui.
+                    </p>
+                    <button type="button" class="qa-btn qa-btn--ghost" @onclick="ShowAllTopics"
+                            style="margin-top:14px">
+                        Ver todas as perguntas
+                    </button>
+                </div>
+            }
+
             @* ── ESTADO: LISTA ─────────────────────────────────────────── *@
             else
             {
@@ -263,7 +429,7 @@
                         var index = 0;
                     }
 
-                    @foreach (var question in _questions)
+                    @foreach (var question in FilteredQuestions)
                     {
                         index++;
 
@@ -275,6 +441,15 @@
                             <div class="qa-qcard__top">
 
                                 <span class="qa-qcard__num">#@index.ToString("00")</span>
+
+                                @if (question.TopicID is Guid qTopicId
+                                    && _topicNames.TryGetValue(qTopicId, out var qTopicName))
+                                {
+                                    <span class="qa-chip qa-chip--teal">
+                                        <span class="qa-chip__dot" aria-hidden="true"></span>
+                                        @qTopicName
+                                    </span>
+                                }
 
                                 <span class="qa-chip @StatusChipClass(status)" style="margin-left:auto">
                                     <span class="qa-chip__dot" aria-hidden="true"></span>
@@ -377,6 +552,23 @@
                                    @bind-Value="editingQuestion.Answer" />
                 </div>
 
+                @if (_topics.Count > 0)
+                {
+                    <div class="qa-field">
+                        <label class="qa-label" for="qa-edit-topic">Submatéria</label>
+                        <select class="qa-select"
+                                id="qa-edit-topic"
+                                value="@(editingQuestion.TopicID?.ToString() ?? "")"
+                                @onchange="OnEditTopicChanged">
+                            <option value="">Sem submatéria</option>
+                            @foreach (var topic in _topics)
+                            {
+                                <option value="@topic.ID">@topic.Name</option>
+                            }
+                        </select>
+                    </div>
+                }
+
             </div>
 
             <div class="qa-dialog__foot">
@@ -429,6 +621,175 @@
     </div>
 }
 
+@* ═══════════════════ DIÁLOGO: GERENCIAR SUBMATÉRIAS ═══════════════════
+   Criar, renomear e excluir. A confirmação de exclusão acontece dentro
+   da própria linha, para não empilhar um segundo overlay por cima deste. *@
+@if (_showTopics)
+{
+    <div class="qa-overlay" @onclick="CloseTopics">
+
+        <div class="qa-dialog qa-dialog--lg"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="qa-topics-title"
+             @onclick:stopPropagation="true">
+
+            <div class="qa-dialog__head">
+                <h2 class="qa-dialog__title" id="qa-topics-title">Submatérias de @_subject.Name</h2>
+                <button type="button"
+                        class="qa-btn qa-btn--icon qa-dialog__close"
+                        @onclick="CloseTopics"
+                        aria-label="Fechar">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-x"></use></svg>
+                </button>
+            </div>
+
+            <div class="qa-dialog__body">
+
+                @* ── CRIAR ──────────────────────────────────────────── *@
+                <div class="qa-field">
+                    <label class="qa-label" for="qa-new-topic-name">Nova submatéria</label>
+                    <div class="qa-row">
+                        <input class="qa-input"
+                               id="qa-new-topic-name"
+                               @bind="_newTopicName"
+                               @bind:event="oninput"
+                               @onkeydown="OnNewTopicKeyDown"
+                               placeholder="Ex.: SP1" />
+                        <button type="button"
+                                class="qa-btn qa-btn--primary"
+                                disabled="@string.IsNullOrWhiteSpace(_newTopicName)"
+                                @onclick="CreateTopic">
+                            <svg class="qa-ico" aria-hidden="true"><use href="#i-plus"></use></svg>
+                            Criar
+                        </button>
+                    </div>
+                    <span class="qa-hint">Nomes se repetem entre matérias, mas não dentro da mesma.</span>
+                </div>
+
+                @* ── LISTA ──────────────────────────────────────────── *@
+                @if (_topics.Count == 0)
+                {
+                    <p class="qa-muted" style="margin-top:18px">
+                        Esta matéria ainda não tem submatérias. Perguntas sem submatéria
+                        continuam funcionando normalmente.
+                    </p>
+                }
+                else
+                {
+                    <div style="margin-top:18px;display:flex;flex-direction:column;gap:8px">
+
+                        @foreach (var topic in _topics)
+                        {
+                            var used = _questions.Count(q => q.TopicID == topic.ID);
+
+                            <div class="qa-plate">
+
+                                @* MODO: RENOMEANDO *@
+                                @if (_renamingTopicId == topic.ID)
+                                {
+                                    <div class="qa-row">
+                                        <input class="qa-input"
+                                               @bind="_renamingName"
+                                               @bind:event="oninput" />
+                                        <button type="button"
+                                                class="qa-btn qa-btn--primary qa-btn--sm"
+                                                @onclick="() => ConfirmRename(topic)">
+                                            <svg class="qa-ico" aria-hidden="true"><use href="#i-check"></use></svg>
+                                            Salvar
+                                        </button>
+                                        <button type="button"
+                                                class="qa-btn qa-btn--ghost qa-btn--sm"
+                                                @onclick="CancelRename">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                }
+
+                                @* MODO: CONFIRMANDO EXCLUSÃO *@
+                                else if (_topicDeleteId == topic.ID)
+                                {
+                                    <div class="qa-row qa-row--between qa-row--wrap">
+                                        <div style="min-width:0">
+                                            <strong>Excluir &ldquo;@topic.Name&rdquo;?</strong>
+                                            <p class="qa-hint" style="margin:4px 0 0">
+                                                @if (used == 0)
+                                                {
+                                                    <span>Nenhuma pergunta usa esta submatéria.</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>
+                                                        @used @(used == 1 ? "pergunta volta" : "perguntas voltam")
+                                                        para &ldquo;sem submatéria&rdquo;. Nenhuma pergunta é apagada.
+                                                    </span>
+                                                }
+                                            </p>
+                                        </div>
+                                        <div class="qa-row">
+                                            <button type="button"
+                                                    class="qa-btn qa-btn--ghost qa-btn--sm"
+                                                    @onclick="CancelDeleteTopic">
+                                                Cancelar
+                                            </button>
+                                            <button type="button"
+                                                    class="qa-btn qa-btn--danger-solid qa-btn--sm"
+                                                    @onclick="() => ConfirmDeleteTopic(topic.ID)">
+                                                <svg class="qa-ico" aria-hidden="true"><use href="#i-trash"></use></svg>
+                                                Excluir
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+
+                                @* MODO: NORMAL *@
+                                else
+                                {
+                                    <div class="qa-row qa-row--between qa-row--wrap">
+                                        <div class="qa-row" style="min-width:0">
+                                            <span class="qa-chip qa-chip--teal">
+                                                <span class="qa-chip__dot" aria-hidden="true"></span>
+                                                @topic.Name
+                                            </span>
+                                            <span class="qa-hint">
+                                                @used @(used == 1 ? "pergunta" : "perguntas")
+                                            </span>
+                                        </div>
+                                        <div class="qa-row">
+                                            <button type="button"
+                                                    class="qa-btn qa-btn--ghost qa-btn--sm"
+                                                    @onclick="() => StartRename(topic)">
+                                                <svg class="qa-ico" aria-hidden="true"><use href="#i-pencil"></use></svg>
+                                                Renomear
+                                            </button>
+                                            <button type="button"
+                                                    class="qa-btn qa-btn--danger qa-btn--sm"
+                                                    @onclick="() => AskDeleteTopic(topic.ID)">
+                                                <svg class="qa-ico" aria-hidden="true"><use href="#i-trash"></use></svg>
+                                                Excluir
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+
+                            </div>
+                        }
+
+                    </div>
+                }
+
+            </div>
+
+            <div class="qa-dialog__foot">
+                <button type="button" class="qa-btn qa-btn--ghost" @onclick="CloseTopics">
+                    Fechar
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
 
 @code {
 
@@ -449,6 +810,46 @@
     private bool _loading = true;
     private Question? _deleteTarget;
 
+    // ── SUBMATÉRIAS ──────────────────────────────────────────────────────
+    private List<Topic> _topics = [];
+    private Dictionary<Guid, string> _topicNames = new();
+
+    // O filtro tem TRÊS estados, então os três têm nome.
+    private enum TopicFilterKind { All, One, None }
+    private TopicFilterKind _filterKind = TopicFilterKind.All;
+    private Guid _filterTopicId;
+
+    // Diálogo de gerenciamento
+    private bool _showTopics;
+    private string _newTopicName = string.Empty;
+    private Guid? _renamingTopicId;
+    private string _renamingName = string.Empty;
+    private Guid? _topicDeleteId;
+
+    /// <summary>
+    /// Recorte da lista conforme o filtro. Filtra em memória de propósito:
+    /// as perguntas da matéria já vieram todas no GetQuestions(), então
+    /// filtrar por submatéria não justifica outra ida ao servidor.
+    /// </summary>
+    private IEnumerable<Question> FilteredQuestions => _filterKind switch
+    {
+        TopicFilterKind.One => _questions.Where(q => q.TopicID == _filterTopicId),
+        TopicFilterKind.None => _questions.Where(q => q.TopicID is null),
+        _ => _questions
+    };
+
+    /// <summary>
+    /// Rótulo do filtro atual, exibido no cabeçalho recolhido das
+    /// submatérias no mobile — para o bloco fechado não esconder
+    /// qual recorte está valendo. Usa _topicNames, que já é montado
+    /// em LoadTopics().
+    /// </summary>
+    private string TopicFilterLabel => _filterKind switch
+    {
+        TopicFilterKind.One => _topicNames.TryGetValue(_filterTopicId, out var name) ? name : "Todas",
+        TopicFilterKind.None => "Sem submatéria",
+        _ => "Todas"
+    };
 
     // ══════════════════════════════════════════════════════════════════════
     // CICLO DE VIDA / DADOS — INALTERADO
@@ -459,6 +860,7 @@
             return;
 
         await GetQuestions();
+        await GetTopics();
 
         _subject = await SubjectService.GetAsync(Id) ?? new();
 
@@ -486,7 +888,11 @@
 
         await QuestionService.CreateAsync(_question);
 
-        _question = new();
+        // Mantém a submatéria selecionada para a próxima pergunta: quem está
+        // cadastrando 15 questões da SP1 não quer reescolher a cada uma.
+        var lastTopic = _question.TopicID;
+
+        _question = new Question { TopicID = lastTopic };
 
         await GetQuestions();
     }
@@ -629,5 +1035,147 @@
     private int? GetNeverAnsweredCount()
     {
         return _questions.Count(q => q.TimesAnswered == 0);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SUBMATÉRIAS
+    // ══════════════════════════════════════════════════════════════════════
+    private async Task GetTopics()
+    {
+        _topics = await TopicService.GetAllAsync(Id);
+        _topicNames = _topics.ToDictionary(t => t.ID, t => t.Name);
+
+        // Se a submatéria filtrada deixou de existir (excluída agora, ou em
+        // outra aba), o filtro apontaria para o nada e a lista ficaria vazia
+        // sem explicação. Volta para "Todas".
+        if (_filterKind == TopicFilterKind.One && !_topicNames.ContainsKey(_filterTopicId))
+            _filterKind = TopicFilterKind.All;
+
+        StateHasChanged();
+    }
+
+    private void ShowAllTopics()
+    {
+        _filterKind = TopicFilterKind.All;
+    }
+
+    private void FilterByTopic(Guid topicId)
+    {
+        _filterKind = TopicFilterKind.One;
+        _filterTopicId = topicId;
+    }
+
+    private void FilterWithoutTopic()
+    {
+        _filterKind = TopicFilterKind.None;
+    }
+
+    private static Guid? ParseTopicValue(object? raw)
+    {
+        var text = raw?.ToString();
+
+        return string.IsNullOrEmpty(text) ? null : Guid.Parse(text);
+    }
+
+    private void OnNewTopicChanged(ChangeEventArgs e)
+    {
+        _question.TopicID = ParseTopicValue(e.Value);
+    }
+
+    private void OnEditTopicChanged(ChangeEventArgs e)
+    {
+        if (editingQuestion is not null)
+            editingQuestion.TopicID = ParseTopicValue(e.Value);
+    }
+
+    private void OpenTopics()
+    {
+        _newTopicName = string.Empty;
+        _renamingTopicId = null;
+        _topicDeleteId = null;
+        _showTopics = true;
+    }
+
+    private void CloseTopics()
+    {
+        _showTopics = false;
+    }
+
+    private async Task OnNewTopicKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await CreateTopic();
+    }
+
+    private async Task CreateTopic()
+    {
+        var name = _newTopicName.Trim();
+
+        if (string.IsNullOrWhiteSpace(name))
+            return;
+
+        await TopicService.CreateAsync(new Topic
+        {
+            SubjectID = Id,
+            Name = name,
+            Position = _topics.Count
+        });
+
+        _newTopicName = string.Empty;
+
+        await GetTopics();
+    }
+
+    private void StartRename(Topic topic)
+    {
+        _topicDeleteId = null;
+        _renamingTopicId = topic.ID;
+        _renamingName = topic.Name;
+    }
+
+    private void CancelRename()
+    {
+        _renamingTopicId = null;
+        _renamingName = string.Empty;
+    }
+
+    private async Task ConfirmRename(Topic topic)
+    {
+        var name = _renamingName.Trim();
+
+        if (string.IsNullOrWhiteSpace(name) || name == topic.Name)
+        {
+            CancelRename();
+            return;
+        }
+
+        topic.Name = name;
+
+        await TopicService.UpdateAsync(topic);
+
+        CancelRename();
+
+        await GetTopics();
+    }
+
+    private void AskDeleteTopic(Guid id)
+    {
+        _renamingTopicId = null;
+        _topicDeleteId = id;
+    }
+
+    private void CancelDeleteTopic()
+    {
+        _topicDeleteId = null;
+    }
+
+    private async Task ConfirmDeleteTopic(Guid id)
+    {
+        _topicDeleteId = null;
+
+        await TopicService.DeleteAsync(id);
+
+        await GetTopics();
+        await GetQuestions();
     }
 }

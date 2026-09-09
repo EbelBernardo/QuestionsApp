@@ -1521,6 +1521,91 @@ p {
     gap: 2px;
 }
 
+/* Variante horizontal: usada quando os filtros saem da coluna
+   lateral e vão para dentro do palco (mobile). Mesmo componente,
+   só a direção e a borda mudam. */
+.qa-filters--row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+    .qa-filters--row .qa-filter {
+        width: auto;
+        padding: 7px 12px;
+        border: 1px solid var(--qa-border);
+        border-radius: var(--qa-r-full);
+    }
+
+        .qa-filters--row .qa-filter.is-active {
+            border-color: var(--qa-border-strong);
+        }
+
+    .qa-filters--row .qa-filter__count {
+        margin-left: 2px;
+    }
+
+/* ── BLOCO RECOLHÍVEL ──────────────────────────────────────
+   <details> nativo: o estado aberto/fechado é do browser, não
+   do componente. Um campo bool a menos para sincronizar. */
+.qa-subtopics {
+    padding: var(--qa-s4);
+}
+
+    .qa-subtopics > summary {
+        list-style: none;
+    }
+
+        .qa-subtopics > summary::-webkit-details-marker {
+            display: none;
+        }
+
+.qa-collapse__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.qa-collapse__now {
+    font-size: var(--qa-fs-xs);
+    font-weight: 600;
+    color: var(--qa-text);
+    background: var(--qa-surface);
+    border-radius: var(--qa-r-full);
+    padding: 3px 10px;
+    max-width: 45%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.qa-collapse__chev {
+    margin-left: auto;
+    flex: none;
+    color: var(--qa-text-3);
+    transition: transform var(--qa-t);
+}
+
+.qa-subtopics[open] .qa-collapse__chev {
+    transform: rotate(180deg);
+}
+
+.qa-collapse__body {
+    margin-top: var(--qa-s3);
+}
+
+/* chip de ação (Gerenciar) — separado dos filtros pelo tracejado */
+.qa-filters--row .qa-filter--action {
+    border-style: dashed;
+    color: var(--qa-text-3);
+}
+
+    .qa-filters--row .qa-filter--action .qa-ico {
+        width: 15px;
+        height: 15px;
+    }
 
 /* ═══════════════════════════════════════════════════════════
    10. ESTADOS (vazio · carregando · skeleton)
