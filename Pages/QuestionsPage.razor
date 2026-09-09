@@ -500,13 +500,23 @@
 
     private void OpenEditModal(Question question)
     {
+        // A cópia precisa levar TODAS as colunas. QuestionService.UpdateAsync
+        // manda o modelo inteiro no PATCH — qualquer campo que não for copiado
+        // aqui vai para o banco como default (0, false, Guid.Empty) e sobrescreve
+        // o valor real.
         editingQuestion = new Question
         {
             ID = question.ID,
             Statement = question.Statement,
             Answer = question.Answer,
+            TimesAnswered = question.TimesAnswered,
+            CorrectAnswers = question.CorrectAnswers,
+            LastAnswerCorrect = question.LastAnswerCorrect,
+            CreatedAt = question.CreatedAt,
+            LastReview = question.LastReview,
             SubjectID = question.SubjectID,
-            CreatedAt = question.CreatedAt
+            TopicID = question.TopicID,
+            UserId = question.UserId
         };
 
         showEditModal = true;
