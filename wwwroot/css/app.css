@@ -344,28 +344,49 @@ p {
     }
 
 /* ── TOPO MOBILE ───────────────────────────────────────── */
+/* Pílula flutuante que espelha o .qa-dock inferior: mesmo raio,
+   mesma superfície, mesma sombra. Translúcida + blur porque é
+   sticky — o conteúdo passa por baixo dela ao rolar. */
 .qa-mtop {
     display: none;
     align-items: center;
-    gap: var(--qa-s3);
-    padding: var(--qa-s4) var(--qa-s4);
-    background: var(--qa-bg-context);
-    border-bottom: 1px solid var(--qa-border);
+    gap: var(--qa-s2);
+    padding: 7px var(--qa-s4) 7px 7px;
+    min-height: 50px;
+    background: var(--qa-bg-rail); /* fallback */
+    background: color-mix(in srgb, var(--qa-bg-rail) 86%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--qa-border);
+    border-radius: var(--qa-r-full);
+    box-shadow: var(--qa-sh-3);
     position: sticky;
-    top: 0;
+    top: calc(var(--qa-s3) + env(safe-area-inset-top, 0px));
+    margin-bottom: var(--qa-s5);
     z-index: calc(var(--qa-z-rail) - 1);
 }
 
     .qa-mtop h2 {
         font-size: var(--qa-fs-lg);
         font-weight: 700;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* dentro da pílula o botão de voltar também vira redondo */
+    .qa-mtop .qa-btn--icon {
+        flex: none;
+        border-radius: var(--qa-r-full);
     }
 
     .qa-mtop .qa-brand {
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--qa-r-full);
         font-size: 14px;
+        flex: none;
     }
 
 /* ── PÁGINA: painel contextual + palco ─────────────────── */
