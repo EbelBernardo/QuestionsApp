@@ -4,22 +4,25 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>QuestionsApp</title>
-    <base href="/" />
     <meta name="theme-color" content="#16120E" />
+    <base href="/" />
+    <title>Cards</title>
+
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="apple-mobile-web-app-title" content="Cards" />
+
     <link rel="preload" id="webassembly" />
 
-    <!-- Bootstrap REMOVIDO. O design system é próprio (theme.css + app.css). -->
     <link href="css/theme.css" rel="stylesheet" />
     <link href="css/app.css" rel="stylesheet" />
     <link href="Questions.styles.css" rel="stylesheet" />
 
-    <!--
-      ANTI-FLASH DE TEMA
-      Aplica a classe de tema ANTES do primeiro paint. Sem isto a página
-      pisca no tema errado enquanto o WebAssembly carrega.
-      Mantém o mesmo contrato do theme.js (classe no <body>).
-    -->
+    <script type="importmap"></script>
+</head>
+
+<body>
     <script>
         (function () {
             var t = null;
@@ -29,14 +32,6 @@
         })();
     </script>
 
-    <script type="importmap"></script>
-</head>
-
-<body>
-    <!--
-      O theme.js roda logo abaixo e move a classe para o <body>.
-      A classe inicial aqui evita o flash antes do script.
-    -->
     <div id="app">
         <svg class="loading-progress">
             <circle r="40%" cx="50%" cy="50%" />
@@ -51,16 +46,6 @@
         <span class="dismiss">🗙</span>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════════
-         SPRITE DE ÍCONES
-         Substitui o bootstrap-icons (que vinha de CDN). Ícones inline,
-         sem dependência externa, herdam a cor do texto via currentColor.
-
-         Uso no Razor:
-             <svg class="qa-ico"><use href="#i-plus"></use></svg>
-
-         Para adicionar um ícone novo: cole um <symbol id="i-nome"> aqui.
-         ══════════════════════════════════════════════════════════════════ -->
     <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
         <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></symbol>
         <symbol id="i-layers" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="15" rx="3" /><path d="M8 3h10a3 3 0 0 1 3 3v10" /></symbol>
