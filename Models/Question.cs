@@ -29,5 +29,15 @@ namespace Questions.Models
         public Guid? TopicID { get; set; }
         [Column("user_id")]
         public Guid UserId { get; set; }
+        [Column("ease_factor")]
+        public double EaseFactor { get; set; } = 2.5;
+        [Column("repetitions")]
+        public int Repetitions { get; set; }
+        [Column("interval_days")]
+        public int IntervalDays { get; set; }
+        [Column("lapses")]
+        public int Lapses { get; set; }
+        [Column("due_at")]
+        public DateTime? DueAt { get; set; }
     }
 }

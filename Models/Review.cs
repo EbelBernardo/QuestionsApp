@@ -24,4 +24,7 @@ public class Review : BaseModel
 
     [Column("answered_at")]
     public DateTime AnsweredAt { get; set; } = DateTime.UtcNow;
+
+    [Column("rating")]
+    public int? Rating { get; set; }
 }
