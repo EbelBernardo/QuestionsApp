@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════
    01. BASE E RESET
    ═══════════════════════════════════════════════════════════ */
 *, *::before, *::after {
@@ -614,6 +614,30 @@ p {
 }
 
     .qa-btn--success:hover {
+        filter: brightness(1.08);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+/* Notas do modo estudo (Errei · Difícil · Bom · Fácil).
+   Mesmo molde de --success/--danger, com as variáveis que já existem. */
+.qa-btn--warning {
+    background: var(--qa-warning);
+    color: #fff;
+}
+
+    .qa-btn--warning:hover {
+        filter: brightness(1.08);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+.qa-btn--info {
+    background: var(--qa-info);
+    color: #fff;
+}
+
+    .qa-btn--info:hover {
         filter: brightness(1.08);
         color: #fff;
         transform: translateY(-1px);
@@ -1801,6 +1825,45 @@ p {
         min-width: 168px;
     }
 
+/* Grade das 4 notas: uma linha no desktop, 2x2 no celular.
+   Fica depois de .qa-focus__bar .qa-btn--lg de propósito: precisa vencer
+   o min-width e a altura fixa de --lg na cascata. */
+.qa-focus__bar .qa-rate {
+    display: grid;
+    flex: 0 0 100%;
+    margin-inline: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--qa-s3);
+    width: 100%;
+    max-width: 720px;
+}
+
+.qa-focus__bar .qa-rate__btn {
+    flex-direction: column;
+    gap: 2px;
+    height: auto;
+    min-width: 0;
+    padding: var(--qa-s3);
+    line-height: 1.2;
+}
+
+.qa-focus__bar .qa-rate__top {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--qa-s2);
+}
+
+.qa-focus__bar .qa-rate__hint {
+    font-family: var(--qa-font-mono);
+    font-size: var(--qa-fs-xs);
+    opacity: .85;
+}
+
+.qa-focus__bar .qa-rate__back {
+    flex: 0 0 100%;
+    margin-top: var(--qa-s2);
+}
+
 /* ── CARD COM VIRADA ───────────────────────────────────────
    Estrutura esperada no Razor:
      <div class="qa-flip is-flipped?">
@@ -2565,6 +2628,10 @@ p {
             min-width: 0;
             padding: 0 12px;
         }
+
+    .qa-focus__bar .qa-rate {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
     .qa-flip__inner {
         min-height: 260px;

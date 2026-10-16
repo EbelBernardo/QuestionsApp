@@ -1,33 +1,4 @@
-﻿@*
-    ══════════════════════════════════════════════════════════════════════════
-    Pages/Cards.razor — MODO DE ESTUDO (arquivo estava VAZIO)
-    ──────────────────────────────────────────────────────────────────────────
-    Rota NOVA: "/cards/{Id:guid}"   ·   Layout: FocusLayout (sem menu)
-
-    ⚠ ANTES DE USAR: remova do Questions.csproj os dois ItemGroup que tratam
-      este arquivo como código C# em vez de componente Razor. Veja o passo 0
-      da documentação de implementação — sem isso o projeto não compila.
-
-    ── DE ONDE VEIO ESTE CÓDIGO ──────────────────────────────────────────────
-      Tudo abaixo é o modal de flashcards que vivia dentro de
-      Pages/SubjectsPage.razor. Os métodos foram movidos COM O MESMO NOME E O
-      MESMO CORPO:
-        · OpenCardModal(...)  → virou LoadSession() (mesmo conteúdo,
-                                 disparado pela rota em vez do clique)
-        · Correct(question)   → idêntico
-        · Wrong(question)     → idêntico
-        · NextQuestion()      → idêntico
-        · UpdateQuestion(q)   → idêntico (QuestionService.UpdateAsync)
-        · CloseModal()        → virou Exit() + Restart()
-
-    ── O QUE FOI ACRESCENTADO (só interface) ─────────────────────────────────
-      · Virada do card em 3D (_showAnswer já existia e controla a virada)
-      · Trilha de progresso da sessão
-      · Atalhos de teclado: espaço/enter vira · 1 errei · 2 acertei · Esc sai
-      · Tela de resultado com anel de percentual
-    ══════════════════════════════════════════════════════════════════════════
-*@
-@page "/cards/{Id:guid}"
+﻿@page "/cards/{Id:guid}"
 @layout FocusLayout
 @attribute [Authorize]
 @using Questions.Models
@@ -37,8 +8,8 @@
 
 @inject QuestionService QuestionService
 @inject SubjectService SubjectService
-@inject ReviewService ReviewService
 @inject NavigationManager Navigation
+@inject StudyService StudyService
 
 <PageTitle>Estudando @_subject.Name · QuestionsApp</PageTitle>
 
@@ -225,30 +196,76 @@
     {
         <div class="qa-focus__bar">
 
-            <button type="button"
-                    class="qa-btn qa-btn--lg qa-btn--outline"
-                    style="color:var(--qa-danger);border-color:var(--qa-danger)"
-                    @onclick="() => Wrong(CurrentQuestion!)">
-                <svg class="qa-ico" aria-hidden="true"><use href="#i-x"></use></svg>
-                Errei
-                <span class="qa-kbd" aria-hidden="true">1</span>
-            </button>
+            @* Antes de virar o card só existe uma ação possível: ver a resposta.
+               As notas só aparecem depois, porque avaliar a dificuldade sem ter
+               visto a resposta não quer dizer nada. *@
+            @if (!_showAnswer)
+            {
+                <button type="button"
+                        class="qa-btn qa-btn--lg qa-btn--primary"
+                        @onclick="ToggleAnswer">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-flip"></use></svg>
+                    Virar card
+                    <span class="qa-kbd" aria-hidden="true">espaço</span>
+                </button>
+            }
+            else
+            {
+                <div class="qa-rate">
 
-            <button type="button"
-                    class="qa-btn qa-btn--lg qa-btn--secondary"
-                    @onclick="ToggleAnswer">
-                <svg class="qa-ico" aria-hidden="true"><use href="#i-flip"></use></svg>
-                @(_showAnswer ? "Ver pergunta" : "Virar card")
-                <span class="qa-kbd" aria-hidden="true">espaço</span>
-            </button>
+                    <button type="button"
+                            class="qa-btn qa-btn--lg qa-btn--danger-solid qa-rate__btn"
+                            @onclick="() => Answer(CurrentQuestion!, Rating.Errei)">
+                        <span class="qa-rate__top">
+                            <svg class="qa-ico" aria-hidden="true"><use href="#i-x"></use></svg>
+                            Errei
+                            <span class="qa-kbd" aria-hidden="true">1</span>
+                        </span>
+                        <span class="qa-rate__hint">@NextInterval(Rating.Errei)</span>
+                    </button>
 
-            <button type="button"
-                    class="qa-btn qa-btn--lg qa-btn--success"
-                    @onclick="() => Correct(CurrentQuestion!)">
-                <svg class="qa-ico" aria-hidden="true"><use href="#i-check"></use></svg>
-                Acertei
-                <span class="qa-kbd" aria-hidden="true">2</span>
-            </button>
+                    <button type="button"
+                            class="qa-btn qa-btn--lg qa-btn--warning qa-rate__btn"
+                            @onclick="() => Answer(CurrentQuestion!, Rating.Dificil)">
+                        <span class="qa-rate__top">
+                            <svg class="qa-ico" aria-hidden="true"><use href="#i-alert"></use></svg>
+                            Difícil
+                            <span class="qa-kbd" aria-hidden="true">2</span>
+                        </span>
+                        <span class="qa-rate__hint">@NextInterval(Rating.Dificil)</span>
+                    </button>
+
+                    <button type="button"
+                            class="qa-btn qa-btn--lg qa-btn--success qa-rate__btn"
+                            @onclick="() => Answer(CurrentQuestion!, Rating.Bom)">
+                        <span class="qa-rate__top">
+                            <svg class="qa-ico" aria-hidden="true"><use href="#i-check"></use></svg>
+                            Bom
+                            <span class="qa-kbd" aria-hidden="true">3</span>
+                        </span>
+                        <span class="qa-rate__hint">@NextInterval(Rating.Bom)</span>
+                    </button>
+
+                    <button type="button"
+                            class="qa-btn qa-btn--lg qa-btn--info qa-rate__btn"
+                            @onclick="() => Answer(CurrentQuestion!, Rating.Facil)">
+                        <span class="qa-rate__top">
+                            <svg class="qa-ico" aria-hidden="true"><use href="#i-bolt"></use></svg>
+                            Fácil
+                            <span class="qa-kbd" aria-hidden="true">4</span>
+                        </span>
+                        <span class="qa-rate__hint">@NextInterval(Rating.Facil)</span>
+                    </button>
+
+                </div>
+
+                <button type="button"
+                        class="qa-btn qa-btn--ghost qa-rate__back"
+                        @onclick="ToggleAnswer">
+                    <svg class="qa-ico" aria-hidden="true"><use href="#i-flip"></use></svg>
+                    Ver pergunta
+                </button>
+            }
 
         </div>
     }
@@ -261,7 +278,7 @@
     [Parameter]
     public Guid Id { get; set; }
 
-    // ── ESTADO VINDO DO MODAL ANTIGO (mesmos nomes) ──────────────────────
+    // ── ESTADO VINDO DO MODAL ANTIGO ──────────────────────
     private List<Question> _questions = [];
     private Subject _subject = new();
 
@@ -280,7 +297,7 @@
     // ── ESTADO NOVO, SOMENTE DE INTERFACE ────────────────────────────────
     private bool _loading = true;
     private int _wrongAnswers = 0;
-    private readonly Dictionary<int, bool> _results = new();   // índice → acertou?
+    private readonly Dictionary<int, bool> _results = new();
     private ElementReference _focusElement;
     private bool _focusRequested;
 
@@ -337,57 +354,31 @@
     // ══════════════════════════════════════════════════════════════════════
     // LÓGICA DE RESPOSTA — MOVIDA SEM ALTERAÇÃO
     // ══════════════════════════════════════════════════════════════════════
-    private async Task UpdateQuestion(Question question)
+
+    private async Task Answer(Question question, Rating rating)
     {
-        await QuestionService.UpdateAsync(question);
-    }
+        await StudyService.AnswerAsync(question, rating);
 
-    private async Task Correct(Question question)
-    {
-        question.LastAnswerCorrect = true;
-        question.TimesAnswered++;
-        question.CorrectAnswers++;
+        var correct = rating != Rating.Errei;
 
-        // TODO(dados): descomente para alimentar "revisada há X dias" nas
-        // telas de Matérias. A coluna LastReview já existe no modelo e no
-        // banco, só nunca foi preenchida.
-        question.LastReview = DateTime.UtcNow;
+        _results[currentQuestionIndex] = correct;
 
-        await UpdateQuestion(question);
-        await CreateReview(question, true);
-
-        _results[currentQuestionIndex] = true;
-
-        correctAnswers++;
+        if (correct) correctAnswers++;
+        else _wrongAnswers++;
 
         NextQuestion();
     }
 
-    private async Task Wrong(Question question)
+    // Prévia do intervalo de cada nota, para o rótulo do botão.
+    // Usa a mesma função pura do agendamento, sem gravar nada.
+    private string NextInterval(Rating rating)
     {
-        question.LastAnswerCorrect = false;
-        question.TimesAnswered++;
+        if (CurrentQuestion is null)
+            return string.Empty;
 
-        question.LastReview = DateTime.UtcNow;
+        var days = SpacedRepetition.Next(CurrentQuestion.ToCardState(), rating, DateTime.UtcNow).IntervalDays;
 
-        await UpdateQuestion(question);
-        await CreateReview(question, false);
-
-        _results[currentQuestionIndex] = false;
-
-        _wrongAnswers++;
-
-        NextQuestion();
-    }
-
-    private async Task CreateReview(Question question, bool correct)
-    {
-        await ReviewService.CreateAsync(new Review
-        {
-            QuestionID = question.ID,
-            SubjectID = question.SubjectID,
-            Correct = correct
-        });
+        return days == 1 ? "1 dia" : $"{days} dias";
     }
 
     private void NextQuestion()
@@ -429,10 +420,7 @@
         Navigation.NavigateTo("/");
     }
 
-    // Atalhos: espaço/Enter vira o card · 1 errei · 2 acertei · Esc sai.
-    // Não usamos preventDefault de propósito: bloquear o keydown do container
-    // também bloquearia o Tab, e navegação por teclado vale mais do que evitar
-    // uma rolagem que quase nunca acontece (a tela ocupa exatamente a viewport).
+    // Atalhos: espaço/Enter vira o card · 1 errei · 2 difícil · 3 bom · 4 fácil · Esc sai.
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
         if (_loading || showResult || CurrentQuestion is null)
@@ -451,11 +439,12 @@
                 break;
 
             case "1":
-                await Wrong(CurrentQuestion);
-                break;
-
             case "2":
-                await Correct(CurrentQuestion);
+            case "3":
+            case "4":
+                // As notas só valem com o card virado, igual aos botões.
+                if (_showAnswer)
+                    await Answer(CurrentQuestion, (Rating)int.Parse(e.Key));
                 break;
 
             case "Escape":
