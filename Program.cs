@@ -23,6 +23,7 @@ builder.Services.AddScoped<TopicService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<StudyService>();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<
