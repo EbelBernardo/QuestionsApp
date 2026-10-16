@@ -922,7 +922,15 @@
             LastReview = question.LastReview,
             SubjectID = question.SubjectID,
             TopicID = question.TopicID,
-            UserId = question.UserId
+            UserId = question.UserId,
+
+            // Campos do agendamento (SM-2). Sem eles aqui, salvar uma edição
+            // zera ease_factor/due_at e o card perde a agenda.
+            EaseFactor = question.EaseFactor,
+            Repetitions = question.Repetitions,
+            IntervalDays = question.IntervalDays,
+            Lapses = question.Lapses,
+            DueAt = question.DueAt
         };
 
         showEditModal = true;
